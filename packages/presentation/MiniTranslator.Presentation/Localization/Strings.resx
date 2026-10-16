@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="SettingsTitle" xml:space="preserve"><value>MiniTranslator 설정</value></data>
+  <data name="Settings" xml:space="preserve"><value>설정</value></data>
+  <data name="SettingsHint" xml:space="preserve"><value>테마는 즉시 적용·저장됩니다. 다른 설정은 저장을 누르면 적용됩니다.</value></data>
+  <data name="Appearance" xml:space="preserve"><value>모양</value></data>
+  <data name="Theme" xml:space="preserve"><value>앱 테마</value></data>
+  <data name="ThemeHint" xml:space="preserve"><value>선택하면 모든 창에 바로 적용합니다. 시스템은 Windows의 라이트·다크 설정을 따릅니다.</value></data>
+  <data name="System" xml:space="preserve"><value>시스템</value></data>
+  <data name="Light" xml:space="preserve"><value>라이트</value></data>
+  <data name="Dark" xml:space="preserve"><value>다크</value></data>
+  <data name="SystemTheme" xml:space="preserve"><value>시스템 테마</value></data>
+  <data name="LightTheme" xml:space="preserve"><value>라이트 테마</value></data>
+  <data name="DarkTheme" xml:space="preserve"><value>다크 테마</value></data>
+  <data name="Hotkeys" xml:space="preserve"><value>단축키</value></data>
+  <data name="OpenTranslator" xml:space="preserve"><value>번역 창 열기</value></data>
+  <data name="HotkeyHint" xml:space="preserve"><value>입력란을 클릭한 뒤 원하는 키 조합을 누르세요. Ctrl, Alt, Win 중 하나 이상이 필요합니다.</value></data>
+  <data name="HotkeyInput" xml:space="preserve"><value>단축키 입력</value></data>
+  <data name="HotkeyHelp" xml:space="preserve"><value>Ctrl, Alt, Win 중 하나 이상과 다른 키를 누르세요. Tab으로 다음 항목으로 이동합니다.</value></data>
+  <data name="ResetDefault" xml:space="preserve"><value>기본값으로 되돌리기</value></data>
+  <data name="ResetDefaultPrefix" xml:space="preserve"><value>기본값(</value></data>
+  <data name="ResetDefaultSuffix" xml:space="preserve"><value>)으로 되돌리기</value></data>
+  <data name="Languages" xml:space="preserve"><value>언어</value></data>
+  <data name="TranslationLanguages" xml:space="preserve"><value>번역 언어</value></data>
+  <data name="TranslationLanguagesHint" xml:space="preserve"><value>번역 창이 사용하는 출발 언어와 도착 언어입니다. 기본값은 영어 → 한국어입니다.</value></data>
+  <data name="SourceLanguageLabel" xml:space="preserve"><value>출발 언어(_O)</value></data>
+  <data name="TargetLanguageLabel" xml:space="preserve"><value>도착 언어(_T)</value></data>
+  <data name="SourceLanguage" xml:space="preserve"><value>출발 언어</value></data>
+  <data name="TargetLanguage" xml:space="preserve"><value>도착 언어</value></data>
+  <data name="SwapLanguages" xml:space="preserve"><value>언어 바꾸기</value></data>
+  <data name="Behavior" xml:space="preserve"><value>동작</value></data>
+  <data name="StartWithWindows" xml:space="preserve"><value>Windows 로그인 시 자동 실행</value></data>
+  <data name="StartWithWindowsHint" xml:space="preserve"><value>로그인하면 트레이에서 실행됩니다. 변경 사항은 저장을 누르면 적용됩니다.</value></data>
+  <data name="Use" xml:space="preserve"><value>사용</value></data>
+  <data name="CaptureSelection" xml:space="preserve"><value>선택한 텍스트 가져오기</value></data>
+  <data name="CaptureSelectionHint" xml:space="preserve"><value>단축키를 누르면 다른 앱에서 선택한 텍스트를 복사해 입력창에 넣습니다. 기존 클립보드는 복원됩니다.</value></data>
+  <data name="AutoTranslateOnCapture" xml:space="preserve"><value>가져온 텍스트 즉시 번역</value></data>
+  <data name="AutoTranslateOnCaptureHint" xml:space="preserve"><value>단축키로 텍스트를 가져오자마자 번역합니다. 끄면 전송 전 입력 내용을 확인할 수 있습니다.</value></data>
+  <data name="HideOnDeactivate" xml:space="preserve"><value>포커스를 잃으면 숨기기</value></data>
+  <data name="HideOnDeactivateHint" xml:space="preserve"><value>번역 창 밖을 클릭하면 창을 자동으로 숨깁니다.</value></data>
+  <data name="Save" xml:space="preserve"><value>저장</value></data>
+  <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Translate" xml:space="preserve"><value>번역</value></data>
+  <data name="SettingsShortcut" xml:space="preserve"><value>설정 (Ctrl+,)</value></data>
+  <data name="SwapLanguagesShortcut" xml:space="preserve"><value>언어 바꾸기 (Ctrl+Shift+S)</value></data>
+  <data name="OriginalText" xml:space="preserve"><value>원문</value></data>
+  <data name="ClearAllHint" xml:space="preserve"><value>입력과 결과 모두 지우기</value></data>
+  <data name="ClearAll" xml:space="preserve"><value>모두 지우기</value></data>
+  <data name="Clear" xml:space="preserve"><value>지우기</value></data>
+  <data name="SourceText" xml:space="preserve"><value>번역할 텍스트</value></data>
+  <data name="SourceTextHelp" xml:space="preserve"><value>텍스트를 입력한 후 Ctrl+Enter를 눌러 번역하세요. 최대 5,000자입니다.</value></data>
+  <data name="SourcePlaceholder" xml:space="preserve"><value>번역할 텍스트를 입력하세요.</value></data>
+  <data name="TranslateShortcut" xml:space="preserve"><value>번역 (Ctrl+Enter)</value></data>
+  <data name="TranslateAgain" xml:space="preserve"><value>다시 번역</value></data>
+  <data name="TranslationResult" xml:space="preserve"><value>번역 결과</value></data>
+  <data name="TranslatingAccessible" xml:space="preserve"><value>번역 중</value></data>
+  <data name="ResultTextHelp" xml:space="preserve"><value>읽기 전용입니다. 텍스트를 선택하거나 Ctrl+Shift+C로 전체 결과를 복사할 수 있습니다.</value></data>
+  <data name="ResultPlaceholder" xml:space="preserve"><value>번역 결과가 여기에 표시됩니다.</value></data>
+  <data name="TranslatingPlaceholder" xml:space="preserve"><value>번역하고 있습니다…</value></data>
+  <data name="RetryAfterError" xml:space="preserve"><value>안내 메시지를 확인한 뒤 다시 번역하세요.</value></data>
+  <data name="Translating" xml:space="preserve"><value>번역 중…</value></data>
+  <data name="CopyShortcut" xml:space="preserve"><value>결과 복사 (Ctrl+Shift+C)</value></data>
+  <data name="CopyResult" xml:space="preserve"><value>결과 복사</value></data>
+  <data name="Copy" xml:space="preserve"><value>복사</value></data>
+  <data name="ToggleWindowHint" xml:space="preserve"><value> · 창 열기 / 닫기</value></data>
+  <data name="HideWindowHint" xml:space="preserve"><value>Esc · 숨기기</value></data>
+  <data name="UiLanguage" xml:space="preserve"><value>UI 언어</value></data>
+  <data name="UiLanguageHint" xml:space="preserve"><value>메뉴와 화면에 사용할 기본 언어입니다. 저장하면 바로 적용됩니다.</value></data>
+  <data name="Settings.InvalidUiLanguage" xml:space="preserve"><value>한국어 또는 영어를 선택하세요.</value></data>
+  <data name="Settings.InvalidTheme" xml:space="preserve"><value>테마를 다시 선택하세요.</value></data>
+  <data name="HotkeyRollbackFailed" xml:space="preserve"><value>이전 단축키를 되돌리지 못했습니다: {0}</value></data>
+  <data name="StartupRollbackFailed" xml:space="preserve"><value>자동 실행 설정을 되돌리지 못했습니다: {0}</value></data>
+  <data name="Copied" xml:space="preserve"><value>번역 결과를 클립보드에 복사했습니다.</value></data>
+  <data name="DetectedLanguage" xml:space="preserve"><value>감지된 언어: {0}</value></data>
+  <data name="HotkeyRegistrationFailed" xml:space="preserve"><value>단축키를 등록하지 못했습니다</value></data>
+  <data name="Running" xml:space="preserve"><value>MiniTranslator 실행 중</value></data>
+  <data name="OpenWithHotkey" xml:space="preserve"><value>{0} 키를 눌러 번역 창을 여세요.</value></data>
+  <data name="Exit" xml:space="preserve"><value>종료</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>MiniTranslator가 이미 실행 중입니다.
+작업 표시줄 알림 영역의 아이콘을 확인하세요.</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>예기치 않은 오류가 발생했습니다.
+
+{0}</value></data>
+  <data name="Hotkey.ModifierRequired" xml:space="preserve"><value>단축키에는 Ctrl, Alt, Win 중 하나 이상의 조합 키가 필요합니다.</value></data>
+  <data name="Hotkey.ShiftOnly" xml:space="preserve"><value>Shift만으로는 단축키를 만들 수 없습니다. Ctrl, Alt 또는 Win을 함께 사용하세요.</value></data>
+  <data name="Hotkey.KeyRequired" xml:space="preserve"><value>조합 키와 함께 누를 일반 키를 지정하세요.</value></data>
+  <data name="Hotkey.UnsupportedKey" xml:space="preserve"><value>단축키로 사용할 수 없는 키입니다. ({0})</value></data>
+  <data name="Hotkey.Unparsable" xml:space="preserve"><value>단축키 형식을 해석할 수 없습니다: '{0}'</value></data>
+  <data name="Hotkey.AlreadyInUse" xml:space="preserve"><value>'{0}' 단축키를 등록할 수 없습니다. 다른 프로그램이 사용 중일 수 있습니다.</value></data>
+  <data name="Language.Unknown" xml:space="preserve"><value>지원하지 않는 언어 코드입니다: '{0}'</value></data>
+  <data name="Language.TargetAutoDetect" xml:space="preserve"><value>도착 언어는 '자동 감지'로 설정할 수 없습니다.</value></data>
+  <data name="Language.SameLanguage" xml:space="preserve"><value>출발 언어와 도착 언어가 같습니다.</value></data>
+  <data name="Language.CannotSwapAutoDetect" xml:space="preserve"><value>출발 언어가 '자동 감지'일 때는 언어를 서로 바꿀 수 없습니다.</value></data>
+  <data name="Translation.EmptyText" xml:space="preserve"><value>번역할 내용을 입력하세요.</value></data>
+  <data name="Translation.TooLong" xml:space="preserve"><value>한 번에 최대 5,000자까지 번역할 수 있습니다. (현재 {0}자)</value></data>
+  <data name="Translation.EmptyResponse" xml:space="preserve"><value>번역 서비스가 빈 응답을 반환했습니다.</value></data>
+  <data name="Translation.RateLimited" xml:space="preserve"><value>Google이 번역 요청을 일시적으로 제한했습니다. (HTTP 429) 잠시 후 다시 시도하세요. 공개 번역 서비스는 네트워크의 자동화 요청을 차단할 수 있습니다.</value></data>
+  <data name="Translation.ProviderRejected" xml:space="preserve"><value>번역 서비스가 요청을 거부했습니다. (HTTP {0})</value></data>
+  <data name="Translation.Network" xml:space="preserve"><value>번역 서비스에 연결할 수 없습니다. 네트워크 연결을 확인하세요.</value></data>
+  <data name="Settings.SaveFailed" xml:space="preserve"><value>설정을 저장하지 못했습니다.</value></data>
+  <data name="Clipboard.Busy" xml:space="preserve"><value>클립보드를 사용할 수 없습니다. 잠시 후 다시 시도하세요.</value></data>
+  <data name="Startup.ReadFailed" xml:space="preserve"><value>자동 실행 설정을 읽지 못했습니다.</value></data>
+  <data name="Startup.WriteFailed" xml:space="preserve"><value>자동 실행 설정을 변경하지 못했습니다.</value></data>
+  <data name="Startup.InvalidExecutable" xml:space="preserve"><value>자동 실행을 등록할 수 없습니다. 설치된 MiniTranslator.exe를 실행하고 실행 파일 경로를 258자 이내로 유지하세요.</value></data>
+  <data name="AllRightsReserved" xml:space="preserve"><value>모든 권리 보유.</value></data>
+</root>

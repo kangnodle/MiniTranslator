@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(PortableTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+    <ProjectReference Include="..\MiniTranslator.Testing\MiniTranslator.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

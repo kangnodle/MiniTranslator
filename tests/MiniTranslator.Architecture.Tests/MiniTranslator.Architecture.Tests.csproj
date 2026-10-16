@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\core\MiniTranslator.Domain\MiniTranslator.Domain.csproj" />
+    <ProjectReference Include="..\..\packages\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+    <ProjectReference Include="..\..\packages\presentation\MiniTranslator.Presentation\MiniTranslator.Presentation.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.GoogleTranslate\MiniTranslator.Adapters.GoogleTranslate.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.JsonSettings\MiniTranslator.Adapters.JsonSettings.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.Windows\MiniTranslator.Adapters.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

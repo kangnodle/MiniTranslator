@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\apps\MiniTranslator.Wpf\MiniTranslator.Wpf.csproj" />
+    <ProjectReference Include="..\MiniTranslator.Testing\MiniTranslator.Testing.csproj" />
+  </ItemGroup>
+</Project>

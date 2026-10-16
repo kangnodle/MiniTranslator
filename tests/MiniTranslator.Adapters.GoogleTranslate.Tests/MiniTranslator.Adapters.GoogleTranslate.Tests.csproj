@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(PortableTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.GoogleTranslate\MiniTranslator.Adapters.GoogleTranslate.csproj" />
+  </ItemGroup>
+
+</Project>

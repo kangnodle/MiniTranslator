@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Adapter: Windows desktop integration - global hotkey (RegisterHotKey), clipboard, selected-text capture (SendInput).
+    Policies (key sequences, layout aliases) are pure static classes; Win32/WPF calls are confined to the shells.
+    UseWPF is only needed for HwndSource (hotkey message window) and the STA clipboard API.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <RootNamespace>MiniTranslator.Adapters.Windows</RootNamespace>
+    <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MiniTranslator.Adapters.Windows.Tests" />
+  </ItemGroup>
+
+</Project>

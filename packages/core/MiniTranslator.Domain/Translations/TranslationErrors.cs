@@ -1,0 +1,24 @@
+using MiniTranslator.Domain.Common;
+
+namespace MiniTranslator.Domain.Translations;
+
+public static class TranslationErrors
+{
+    public static Error EmptyText { get; } =
+        new("Translation.EmptyText", "번역할 내용을 입력하세요.");
+
+    public static Error TooLong(int length) =>
+        new("Translation.TooLong", $"한 번에 최대 {TranslationRequest.MaxLength:N0}자까지 번역할 수 있습니다. (현재 {length:N0}자)") { Parameter = length.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) };
+
+    public static Error EmptyResponse { get; } =
+        new("Translation.EmptyResponse", "번역 서비스가 빈 응답을 반환했습니다.");
+
+    public static Error RateLimited { get; } =
+        new("Translation.RateLimited", "Google이 번역 요청을 일시적으로 제한했습니다. (HTTP 429) 잠시 후 다시 시도하세요. 공개 번역 서비스는 네트워크의 자동화 요청을 차단할 수 있습니다.");
+
+    public static Error ProviderRejected(int statusCode, string? detail) =>
+        new Error("Translation.ProviderRejected", $"번역 서비스가 요청을 거부했습니다. (HTTP {statusCode})") { Parameter = statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture) }.WithDetail(detail);
+
+    public static Error Network(string? detail) =>
+        new Error("Translation.Network", "번역 서비스에 연결할 수 없습니다. 네트워크 연결을 확인하세요.").WithDetail(detail);
+}

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Presentation: UI-framework-agnostic ViewModels (MVVM). Talks to Application only.
+    Deliberately net10.0 without WPF so ViewModels are unit-testable and reusable by another UI host.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(PortableTargetFramework)</TargetFramework>
+    <RootNamespace>MiniTranslator.Presentation</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+</Project>

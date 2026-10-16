@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.Windows\MiniTranslator.Adapters.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="SettingsTitle" xml:space="preserve"><value>MiniTranslator Settings</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsHint" xml:space="preserve"><value>Theme changes are saved immediately. Other changes apply when you select Save.</value></data>
+  <data name="Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Theme" xml:space="preserve"><value>App theme</value></data>
+  <data name="ThemeHint" xml:space="preserve"><value>Applies to all windows immediately. System follows the Windows light or dark theme.</value></data>
+  <data name="System" xml:space="preserve"><value>System</value></data>
+  <data name="Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="SystemTheme" xml:space="preserve"><value>System theme</value></data>
+  <data name="LightTheme" xml:space="preserve"><value>Light theme</value></data>
+  <data name="DarkTheme" xml:space="preserve"><value>Dark theme</value></data>
+  <data name="Hotkeys" xml:space="preserve"><value>Hotkeys</value></data>
+  <data name="OpenTranslator" xml:space="preserve"><value>Open translator</value></data>
+  <data name="HotkeyHint" xml:space="preserve"><value>Click the field and press a key combination. Include Ctrl, Alt, or Win.</value></data>
+  <data name="HotkeyInput" xml:space="preserve"><value>Hotkey input</value></data>
+  <data name="HotkeyHelp" xml:space="preserve"><value>Press Ctrl, Alt, or Win with another key. Use Tab to move to the next field.</value></data>
+  <data name="ResetDefault" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="ResetDefaultPrefix" xml:space="preserve"><value>Reset to default (</value></data>
+  <data name="ResetDefaultSuffix" xml:space="preserve"><value>)</value></data>
+  <data name="Languages" xml:space="preserve"><value>Languages</value></data>
+  <data name="TranslationLanguages" xml:space="preserve"><value>Translation languages</value></data>
+  <data name="TranslationLanguagesHint" xml:space="preserve"><value>Source and target languages for translation. The default is English → Korean.</value></data>
+  <data name="SourceLanguageLabel" xml:space="preserve"><value>S_ource language</value></data>
+  <data name="TargetLanguageLabel" xml:space="preserve"><value>_Target language</value></data>
+  <data name="SourceLanguage" xml:space="preserve"><value>Source language</value></data>
+  <data name="TargetLanguage" xml:space="preserve"><value>Target language</value></data>
+  <data name="SwapLanguages" xml:space="preserve"><value>Swap languages</value></data>
+  <data name="Behavior" xml:space="preserve"><value>Behavior</value></data>
+  <data name="StartWithWindows" xml:space="preserve"><value>Start when I sign in to Windows</value></data>
+  <data name="StartWithWindowsHint" xml:space="preserve"><value>Runs in the system tray after sign-in. Select Save to apply changes.</value></data>
+  <data name="Use" xml:space="preserve"><value>Enable</value></data>
+  <data name="CaptureSelection" xml:space="preserve"><value>Capture selected text</value></data>
+  <data name="CaptureSelectionHint" xml:space="preserve"><value>Copies selected text from another app into the input field when pressing the hotkey.</value></data>
+  <data name="AutoTranslateOnCapture" xml:space="preserve"><value>Translate captured text immediately</value></data>
+  <data name="AutoTranslateOnCaptureHint" xml:space="preserve"><value>Automatically sends captured text to translate when opened. Turn off to review text before sending.</value></data>
+  <data name="HideOnDeactivate" xml:space="preserve"><value>Hide when focus is lost</value></data>
+  <data name="HideOnDeactivateHint" xml:space="preserve"><value>Hides the translator when you click outside the window.</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Translate" xml:space="preserve"><value>Translate</value></data>
+  <data name="SettingsShortcut" xml:space="preserve"><value>Settings (Ctrl+,)</value></data>
+  <data name="SwapLanguagesShortcut" xml:space="preserve"><value>Swap languages (Ctrl+Shift+S)</value></data>
+  <data name="OriginalText" xml:space="preserve"><value>Original text</value></data>
+  <data name="ClearAllHint" xml:space="preserve"><value>Clear the input and translation</value></data>
+  <data name="ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="SourceText" xml:space="preserve"><value>Text to translate</value></data>
+  <data name="SourceTextHelp" xml:space="preserve"><value>Enter text and press Ctrl+Enter to translate. Maximum: 5,000 characters.</value></data>
+  <data name="SourcePlaceholder" xml:space="preserve"><value>Enter text to translate.</value></data>
+  <data name="TranslateShortcut" xml:space="preserve"><value>Translate (Ctrl+Enter)</value></data>
+  <data name="TranslateAgain" xml:space="preserve"><value>Translate again</value></data>
+  <data name="TranslationResult" xml:space="preserve"><value>Translation</value></data>
+  <data name="TranslatingAccessible" xml:space="preserve"><value>Translating</value></data>
+  <data name="ResultTextHelp" xml:space="preserve"><value>Read-only. Select text or press Ctrl+Shift+C to copy the entire translation.</value></data>
+  <data name="ResultPlaceholder" xml:space="preserve"><value>Your translation will appear here.</value></data>
+  <data name="TranslatingPlaceholder" xml:space="preserve"><value>Translating…</value></data>
+  <data name="RetryAfterError" xml:space="preserve"><value>Check the message, then try translating again.</value></data>
+  <data name="Translating" xml:space="preserve"><value>Translating…</value></data>
+  <data name="CopyShortcut" xml:space="preserve"><value>Copy translation (Ctrl+Shift+C)</value></data>
+  <data name="CopyResult" xml:space="preserve"><value>Copy translation</value></data>
+  <data name="Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="ToggleWindowHint" xml:space="preserve"><value> · Open / close window</value></data>
+  <data name="HideWindowHint" xml:space="preserve"><value>Esc · Hide</value></data>
+  <data name="UiLanguage" xml:space="preserve"><value>UI language</value></data>
+  <data name="UiLanguageHint" xml:space="preserve"><value>Default language for menus and screens. Select Save to apply immediately.</value></data>
+  <data name="Settings.InvalidUiLanguage" xml:space="preserve"><value>Select Korean or English.</value></data>
+  <data name="Settings.InvalidTheme" xml:space="preserve"><value>Select a valid theme.</value></data>
+  <data name="HotkeyRollbackFailed" xml:space="preserve"><value>Could not restore the previous hotkey: {0}</value></data>
+  <data name="StartupRollbackFailed" xml:space="preserve"><value>Could not restore the startup setting: {0}</value></data>
+  <data name="Copied" xml:space="preserve"><value>Translation copied to the clipboard.</value></data>
+  <data name="DetectedLanguage" xml:space="preserve"><value>Detected language: {0}</value></data>
+  <data name="HotkeyRegistrationFailed" xml:space="preserve"><value>Could not register the hotkey</value></data>
+  <data name="Running" xml:space="preserve"><value>MiniTranslator is running</value></data>
+  <data name="OpenWithHotkey" xml:space="preserve"><value>Press {0} to open the translator.</value></data>
+  <data name="Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>MiniTranslator is already running.
+Look for its icon in the system tray.</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>An unexpected error occurred.
+
+{0}</value></data>
+  <data name="Hotkey.ModifierRequired" xml:space="preserve"><value>A hotkey must include Ctrl, Alt, or Win.</value></data>
+  <data name="Hotkey.ShiftOnly" xml:space="preserve"><value>Shift alone cannot be used as a hotkey modifier. Include Ctrl, Alt, or Win.</value></data>
+  <data name="Hotkey.KeyRequired" xml:space="preserve"><value>Choose a regular key to use with the modifier.</value></data>
+  <data name="Hotkey.UnsupportedKey" xml:space="preserve"><value>This key cannot be used as a hotkey. ({0})</value></data>
+  <data name="Hotkey.Unparsable" xml:space="preserve"><value>Could not parse the hotkey: '{0}'</value></data>
+  <data name="Hotkey.AlreadyInUse" xml:space="preserve"><value>Could not register '{0}'. Another app may be using this hotkey.</value></data>
+  <data name="Language.Unknown" xml:space="preserve"><value>Unsupported language code: '{0}'</value></data>
+  <data name="Language.TargetAutoDetect" xml:space="preserve"><value>The target language cannot be set to automatic detection.</value></data>
+  <data name="Language.SameLanguage" xml:space="preserve"><value>The source and target languages are the same.</value></data>
+  <data name="Language.CannotSwapAutoDetect" xml:space="preserve"><value>Languages cannot be swapped before the source language is detected.</value></data>
+  <data name="Translation.EmptyText" xml:space="preserve"><value>Enter some text to translate.</value></data>
+  <data name="Translation.TooLong" xml:space="preserve"><value>You can translate up to 5,000 characters at a time. (Currently {0} characters)</value></data>
+  <data name="Translation.EmptyResponse" xml:space="preserve"><value>The translation service returned an empty response.</value></data>
+  <data name="Translation.RateLimited" xml:space="preserve"><value>Google has temporarily limited translation requests. (HTTP 429) Please try again later. The public translation service may block automated requests from your network.</value></data>
+  <data name="Translation.ProviderRejected" xml:space="preserve"><value>The translation service rejected the request. (HTTP {0})</value></data>
+  <data name="Translation.Network" xml:space="preserve"><value>Cannot connect to the translation service. Check your network connection.</value></data>
+  <data name="Settings.SaveFailed" xml:space="preserve"><value>Could not save the settings.</value></data>
+  <data name="Clipboard.Busy" xml:space="preserve"><value>The clipboard is unavailable. Try again shortly.</value></data>
+  <data name="Startup.ReadFailed" xml:space="preserve"><value>Could not read the startup setting.</value></data>
+  <data name="Startup.WriteFailed" xml:space="preserve"><value>Could not change the startup setting.</value></data>
+  <data name="Startup.InvalidExecutable" xml:space="preserve"><value>Could not register startup. Run the installed MiniTranslator.exe and keep its full path within 258 characters.</value></data>
+  <data name="AllRightsReserved" xml:space="preserve"><value>All rights reserved.</value></data>
+</root>

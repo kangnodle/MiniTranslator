@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    App host: WPF Views, Controls, tray shell, and the composition root (CompositionRoot.cs).
+    This is the only project that knows every package; nothing references it.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(WindowsTargetFramework)</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>MiniTranslator.Wpf</RootNamespace>
+    <AssemblyName>MiniTranslator</AssemblyName>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Application.ThemeMode (built-in Fluent theme) is still flagged as experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\core\MiniTranslator.Domain\MiniTranslator.Domain.csproj" />
+    <ProjectReference Include="..\..\packages\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+    <ProjectReference Include="..\..\packages\presentation\MiniTranslator.Presentation\MiniTranslator.Presentation.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.GoogleTranslate\MiniTranslator.Adapters.GoogleTranslate.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.JsonSettings\MiniTranslator.Adapters.JsonSettings.csproj" />
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.Windows\MiniTranslator.Adapters.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="H.NotifyIcon.Wpf" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+</Project>

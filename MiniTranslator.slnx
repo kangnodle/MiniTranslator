@@ -1,0 +1,35 @@
+<Solution>
+  <Folder Name="/apps/">
+    <Project Path="apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/packages/" />
+  <Folder Name="/packages/core/">
+    <Project Path="packages/core/MiniTranslator.Domain/MiniTranslator.Domain.csproj" />
+    <Project Path="packages/core/MiniTranslator.Application/MiniTranslator.Application.csproj" />
+  </Folder>
+  <Folder Name="/packages/presentation/">
+    <Project Path="packages/presentation/MiniTranslator.Presentation/MiniTranslator.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/packages/adapters/">
+    <Project Path="packages/adapters/MiniTranslator.Adapters.GoogleTranslate/MiniTranslator.Adapters.GoogleTranslate.csproj" />
+    <Project Path="packages/adapters/MiniTranslator.Adapters.JsonSettings/MiniTranslator.Adapters.JsonSettings.csproj" />
+    <Project Path="packages/adapters/MiniTranslator.Adapters.Windows/MiniTranslator.Adapters.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MiniTranslator.Testing/MiniTranslator.Testing.csproj" />
+    <Project Path="tests/MiniTranslator.Domain.Tests/MiniTranslator.Domain.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Application.Tests/MiniTranslator.Application.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Presentation.Tests/MiniTranslator.Presentation.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Adapters.GoogleTranslate.Tests/MiniTranslator.Adapters.GoogleTranslate.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Adapters.JsonSettings.Tests/MiniTranslator.Adapters.JsonSettings.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Adapters.Windows.Tests/MiniTranslator.Adapters.Windows.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Architecture.Tests/MiniTranslator.Architecture.Tests.csproj" />
+    <Project Path="tests/MiniTranslator.Wpf.Tests/MiniTranslator.Wpf.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+  </Folder>
+</Solution>
