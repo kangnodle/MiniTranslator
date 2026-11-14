@@ -11,9 +11,9 @@
     <SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
   </PropertyGroup>
 
-  <!-- Workspace-wide target frameworks: portable code stays on net10.0; only OS adapters and the app use -windows. -->
+  <!-- Workspace-wide target frameworks: portable code stays on net11.0; only OS adapters and the app use -windows. -->
   <PropertyGroup>
-    <PortableTargetFramework>net10.0</PortableTargetFramework>
-    <WindowsTargetFramework>net10.0-windows</WindowsTargetFramework>
+    <PortableTargetFramework>net11.0</PortableTargetFramework>
+    <WindowsTargetFramework>net11.0-windows</WindowsTargetFramework>
   </PropertyGroup>
 </Project>

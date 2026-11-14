@@ -1,6 +1,6 @@
 # MiniTranslator
 
-.NET 10 · C# · WPF로 만든 Windows 상주형 미니 번역기입니다.
+.NET 11 · C# · WPF로 만든 Windows 상주형 미니 번역기입니다.
 전역 단축키(기본 `Ctrl + Space`)로 어디서든 번역 창을 열고, 로그인이나 API 키 없이 Google 번역으로 번역합니다.
 
 ## 주요 기능
@@ -9,7 +9,7 @@
 | --- | --- |
 | 전역 단축키 변경 | 설정 → 단축키 입력란을 클릭하고 원하는 조합을 누르면 기록됩니다. `Ctrl`·`Alt`·`Win` 중 하나 이상 필요 (Shift 단독 불가). 다른 앱이 이미 사용 중이면 이전 단축키가 그대로 유지됩니다. |
 | 출발/도착 언어 | 번역 창 상단 또는 설정에서 변경. 기본값 **영어 → 한국어**. 출발 언어는 `자동 감지` 가능, 같은 언어를 고르면 자동으로 서로 바뀝니다. |
-| Windows Fluent UI/UX | .NET 10 WPF 내장 Fluent 테마 사용 — Fluent 타이포그래피·카드·강조 버튼·인라인 오류 안내. 넓은 창에서는 원문/결과가 나란히 배치됩니다. |
+| Windows Fluent UI/UX | .NET 11 WPF 내장 Fluent 테마 사용 — Fluent 타이포그래피·카드·강조 버튼·인라인 오류 안내. 넓은 창에서는 원문/결과가 나란히 배치됩니다. |
 | 앱 테마 | 설정 → 모양에서 **시스템 / 라이트 / 다크 / Tomorrow Night Blue / Solarized Light / Solarized Dark**를 콤보박스로 선택합니다. 열린 모든 창에 즉시 적용·자동 저장하며, 다음 실행에도 유지됩니다. 시스템은 Windows 테마를 따릅니다. |
 | 선택 텍스트 바로 번역 | 단축키를 누르면 다른 앱에서 선택한 텍스트를 복사해 즉시 번역 (기존 클립보드 텍스트는 복원). 설정에서 끌 수 있습니다. |
 | 트레이 상주 | 알림 영역 아이콘 클릭 → 번역 창, 우클릭 → 설정/종료. 중복 실행 방지. |
@@ -55,14 +55,14 @@ MiniTranslator/
 │   └── MiniTranslator.Wpf/          실행 파일 · Views · Controls · AppShell · CompositionRoot
 ├── packages/
 │   ├── core/
-│   │   ├── MiniTranslator.Domain/          순수: 값 객체 · 규칙 · Result/Error         (net10.0, 의존성 0)
-│   │   └── MiniTranslator.Application/     유스케이스 · 포트(Abstractions)              (net10.0, Domain만)
+│   │   ├── MiniTranslator.Domain/          순수: 값 객체 · 규칙 · Result/Error         (net11.0, 의존성 0)
+│   │   └── MiniTranslator.Application/     유스케이스 · 포트(Abstractions)              (net11.0, Domain만)
 │   ├── presentation/
-│   │   └── MiniTranslator.Presentation/    ViewModels(MVVM) · KeyChord, WPF 비의존      (net10.0)
+│   │   └── MiniTranslator.Presentation/    ViewModels(MVVM) · KeyChord, WPF 비의존      (net11.0)
 │   └── adapters/
-│       ├── MiniTranslator.Adapters.GoogleTranslate/   ITranslator  — HTTP               (net10.0)
-│       ├── MiniTranslator.Adapters.JsonSettings/      ISettingsRepository — 파일        (net10.0)
-│       └── MiniTranslator.Adapters.Windows/           IGlobalHotkey · IClipboard · ITextSelectionReader — Win32 (net10.0-windows)
+│       ├── MiniTranslator.Adapters.GoogleTranslate/   ITranslator  — HTTP               (net11.0)
+│       ├── MiniTranslator.Adapters.JsonSettings/      ISettingsRepository — 파일        (net11.0)
+│       └── MiniTranslator.Adapters.Windows/           IGlobalHotkey · IClipboard · ITextSelectionReader — Win32 (net11.0-windows)
 └── tests/
     ├── Directory.Build.props        *.Tests 프로젝트에 xUnit 공통 적용
     ├── MiniTranslator.Testing/      공유 테스트 더블(가짜 포트)

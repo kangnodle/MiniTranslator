@@ -2,7 +2,7 @@
 
   <!--
     Presentation: UI-framework-agnostic ViewModels (MVVM). Talks to Application only.
-    Deliberately net10.0 without WPF so ViewModels are unit-testable and reusable by another UI host.
+    Deliberately net11.0 without WPF so ViewModels are unit-testable and reusable by another UI host.
   -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
