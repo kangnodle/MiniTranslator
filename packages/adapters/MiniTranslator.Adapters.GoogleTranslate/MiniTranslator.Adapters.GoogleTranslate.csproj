@@ -14,10 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
-
-  <ItemGroup>
     <InternalsVisibleTo Include="MiniTranslator.Adapters.GoogleTranslate.Tests" />
   </ItemGroup>
 

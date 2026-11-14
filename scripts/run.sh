@@ -8,6 +8,13 @@ fi
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
+# Resolve global.json from the repository before running any build steps.
+sdk_version="$(dotnet --version)"
+if [[ "$sdk_version" != 11.* ]]; then
+    echo ".NET 11 SDK is required (selected SDK: $sdk_version). See global.json." >&2
+    exit 1
+fi
+
 echo "Restoring dependencies..."
 dotnet restore MiniTranslator.slnx
 

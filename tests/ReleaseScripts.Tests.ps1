@@ -17,6 +17,7 @@ if (-not (Test-Path -LiteralPath 'MiniTranslator.slnx')) { exit 91 }
 $nativeArgs = [Environment]::GetCommandLineArgs()[4..([Environment]::GetCommandLineArgs().Length - 1)]
 Add-Content -LiteralPath $env:MINITRANSLATOR_RELEASE_TEST_LOG -Value ($nativeArgs -join '|')
 $stage = $nativeArgs[0]
+if ($stage -eq '--version') { Write-Output '11.0.100'; exit 0 }
 if ($stage -eq 'format' -and $nativeArgs -contains '--verify-no-changes') { $stage = 'lint' }
 if ($stage -eq $env:MINITRANSLATOR_RELEASE_TEST_FAIL) { exit 23 }
 if ($stage -eq 'msbuild') {
@@ -42,6 +43,7 @@ exit 0
     $appExecutable = Join-Path $publishDirectory 'MiniTranslator.exe'
     $installer = Join-Path $fixture 'artifacts/MiniTranslator-0.2.0-win-x64-Setup.exe'
     $expected = @(
+        '--version'
         'restore|MiniTranslator.slnx'
         'format|MiniTranslator.slnx|--no-restore'
         'format|MiniTranslator.slnx|--no-restore|--verify-no-changes'
@@ -75,11 +77,11 @@ exit 0
                 $expectedExit = if (-not $stage) { 0 } elseif ($stages -contains $stage) { 23 } else { 1 }
                 if ($LASTEXITCODE -ne $expectedExit) { throw "$shell/$stage returned $LASTEXITCODE, expected $expectedExit." }
                 $count = switch ($stage) {
-                    'invalid-version' { 6 }
-                    'missing-bundle' { 7 }
-                    'missing-installer' { 8 }
-                    '' { 8 }
-                    default { [Array]::IndexOf($stages, $stage) }
+                    'invalid-version' { 7 }
+                    'missing-bundle' { 8 }
+                    'missing-installer' { 9 }
+                    '' { 9 }
+                    default { [Array]::IndexOf($stages, $stage) + 1 }
                 }
                 $actual = @(Get-Content -LiteralPath $env:MINITRANSLATOR_RELEASE_TEST_LOG)
                 if (($actual -join "`n") -cne ($expected[0..($count - 1)] -join "`n")) {

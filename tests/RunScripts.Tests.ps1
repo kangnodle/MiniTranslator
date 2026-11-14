@@ -12,6 +12,7 @@ if (-not (Test-Path -LiteralPath 'MiniTranslator.slnx')) { exit 91 }
 $nativeArgs = [Environment]::GetCommandLineArgs()[4..([Environment]::GetCommandLineArgs().Length - 1)]
 Add-Content -LiteralPath $env:MINITRANSLATOR_SCRIPT_TEST_LOG -Value ($nativeArgs -join '|')
 $stage = $nativeArgs[0]
+if ($stage -eq '--version') { Write-Output '11.0.100'; exit 0 }
 if ($stage -eq 'format' -and $nativeArgs -contains '--verify-no-changes') { $stage = 'lint' }
 if ($stage -eq $env:MINITRANSLATOR_SCRIPT_TEST_FAIL) { exit 23 }
 exit 0
@@ -25,6 +26,7 @@ exec powershell.exe -NoProfile -File "$(dirname "$0")/record.ps1" "$@"
     $env:PATH = "$testRoot;$originalPath"
     $env:MINITRANSLATOR_SCRIPT_TEST_LOG = Join-Path $testRoot 'commands.log'
     $expected = @(
+        '--version'
         'restore|MiniTranslator.slnx'
         'format|MiniTranslator.slnx|--no-restore'
         'format|MiniTranslator.slnx|--no-restore|--verify-no-changes'
@@ -47,7 +49,7 @@ exec powershell.exe -NoProfile -File "$(dirname "$0")/record.ps1" "$@"
                 }
                 $expectedExit = if ($stage) { 23 } else { 0 }
                 if ($LASTEXITCODE -ne $expectedExit) { throw "$shell/$stage returned $LASTEXITCODE, expected $expectedExit." }
-                $count = if ($stage) { [Array]::IndexOf($stages, $stage) } else { $expected.Count }
+                $count = if ($stage) { [Array]::IndexOf($stages, $stage) + 1 } else { $expected.Count }
                 $actual = @(Get-Content -LiteralPath $env:MINITRANSLATOR_SCRIPT_TEST_LOG)
                 if (($actual -join "`n") -cne ($expected[0..($count - 1)] -join "`n")) {
                     throw "$shell/$stage ran unexpected commands: $($actual -join ', ')."

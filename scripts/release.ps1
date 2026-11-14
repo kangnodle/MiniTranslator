@@ -23,6 +23,13 @@ if (-not $nsisPath) {
 
 Push-Location -LiteralPath (Split-Path -Parent $PSScriptRoot)
 try {
+    # Resolve global.json from the repository before running any build steps.
+    $sdkVersion = & dotnet --version
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    if ($sdkVersion -notmatch '^11\.') {
+        throw ".NET 11 SDK is required (selected SDK: $sdkVersion). See global.json."
+    }
+
     Write-Host 'Restoring dependencies...'
     & dotnet restore MiniTranslator.slnx
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
