@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(PortableTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.ClaudeCli\MiniTranslator.Adapters.ClaudeCli.csproj" />
+  </ItemGroup>
+
+</Project>

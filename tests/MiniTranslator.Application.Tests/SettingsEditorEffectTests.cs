@@ -18,7 +18,7 @@ public class SettingsEditorEffectTests
         var repository = new InMemorySettingsRepository();
         var hotkey = new FakeGlobalHotkey();
         var startup = new FakeStartupRegistration();
-        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), startup);
+        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), startup, new FakeCodexAccount());
 
         var saved = await editor.SaveAsync(editor.Original with { UiLanguage = (UiLanguage)99 }, startWithWindows: true);
         var theme = await editor.SetThemeAsync((AppTheme)99);
@@ -37,7 +37,7 @@ public class SettingsEditorEffectTests
         var hotkey = new FakeGlobalHotkey();
         hotkey.Taken.Add(CtrlAltT);
         var startup = new FakeStartupRegistration();
-        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), startup);
+        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), startup, new FakeCodexAccount());
 
         var result = await editor.SaveAsync(editor.Original with { Hotkey = CtrlAltT }, startWithWindows: true);
 
@@ -54,7 +54,7 @@ public class SettingsEditorEffectTests
         var failure = new Error("Settings.SaveFailed", "disk full");
         var repository = new InMemorySettingsRepository { FailSaveWith = failure };
         var startup = new FakeStartupRegistration { FailWhenEnabled = false };
-        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(new FakeGlobalHotkey()), startup);
+        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(new FakeGlobalHotkey()), startup, new FakeCodexAccount());
         var draft = editor.Original with { Behavior = new(false, false) };
 
         var result = await editor.SaveAsync(draft, startWithWindows: true);
@@ -80,7 +80,7 @@ public class SettingsEditorEffectTests
         var hotkey = new FakeGlobalHotkey();
         var manager = new HotkeyManager(hotkey);
         manager.Apply(HotkeyGesture.Default);
-        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration());
+        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration(), new FakeCodexAccount());
         hotkey.Taken.Add(HotkeyGesture.Default);
 
         var result = await editor.SaveAsync(editor.Original with { Hotkey = CtrlAltT }, startWithWindows: false);
@@ -99,7 +99,7 @@ public class SettingsEditorEffectTests
         var manager = new HotkeyManager(hotkey);
         manager.Apply(HotkeyGesture.Default);
         var startup = new FakeStartupRegistration();
-        var editor = new SettingsEditor(store, manager, startup);
+        var editor = new SettingsEditor(store, manager, startup, new FakeCodexAccount());
         using var cancellation = new CancellationTokenSource();
         var published = false;
         store.Changed += (_, _) => published = true;

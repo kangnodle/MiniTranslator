@@ -44,6 +44,13 @@ public partial class SettingsWindow : Window
         base.OnClosing(e);
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        // Closing with the title bar skips Save and Cancel, and nobody is left to see the browser step finish.
+        _viewModel.AbandonCodexSignIn();
+        base.OnClosed(e);
+    }
+
     private void HotkeyBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) =>
         _viewModel.BeginHotkeyRecording();
 

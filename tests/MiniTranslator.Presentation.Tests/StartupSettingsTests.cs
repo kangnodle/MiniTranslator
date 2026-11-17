@@ -133,6 +133,6 @@ public class StartupSettingsTests
     {
         var store = new SettingsStore(repository);
         var manager = new HotkeyManager(new FakeGlobalHotkey());
-        return new SettingsViewModel(new SettingsEditor(store, manager, startup));
+        return new SettingsViewModel(new SettingsEditor(store, manager, startup, new FakeCodexAccount()));
     }
 }

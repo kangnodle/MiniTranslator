@@ -10,7 +10,7 @@ public class SettingsMapperTests
         HotkeyGesture.Parse("Ctrl+Shift+Q").Value,
         LanguagePair.Create("auto", "ja").Value,
         new BehaviorSettings(CaptureSelectionOnHotkey: false, HideOnDeactivate: false))
-    { Theme = AppTheme.Dark, UiLanguage = UiLanguage.English };
+    { Theme = AppTheme.Dark, UiLanguage = UiLanguage.English, Engine = TranslationEngine.Codex, CodexExecutablePath = @"C:\Tools\codex.exe" };
 
     [Fact]
     public void Round_trips()
@@ -34,6 +34,25 @@ public class SettingsMapperTests
     public void Reads_ui_language_and_defaults_older_or_invalid_values(string? value, UiLanguage expected)
     {
         Assert.Equal(expected, SettingsMapper.FromDocument(new SettingsDocument { UiLanguage = value }).UiLanguage);
+    }
+
+    [Theory]
+    [InlineData("Google", TranslationEngine.Google)]
+    [InlineData("claude", TranslationEngine.Claude)]
+    [InlineData("Codex", TranslationEngine.Codex)]
+    [InlineData(null, TranslationEngine.Google)]
+    [InlineData("unknown", TranslationEngine.Google)]
+    [InlineData("7", TranslationEngine.Google)]
+    public void Reads_the_engine_and_defaults_older_or_invalid_values(string? value, TranslationEngine expected)
+    {
+        Assert.Equal(expected, SettingsMapper.FromDocument(new SettingsDocument { Engine = value }).Engine);
+    }
+
+    [Fact]
+    public void Codex_path_is_empty_in_older_files_and_left_out_of_the_file_when_empty()
+    {
+        Assert.Equal("", SettingsMapper.FromDocument(new SettingsDocument()).CodexExecutablePath);
+        Assert.Null(SettingsMapper.ToDocument(AppSettings.Default).CodexExecutablePath);
     }
 
     [Theory]

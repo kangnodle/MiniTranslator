@@ -29,6 +29,10 @@ public sealed record AppSettings(
 {
     public AppTheme Theme { get; init; } = AppTheme.System;
     public UiLanguage UiLanguage { get; init; } = UiLanguage.Korean;
+    public TranslationEngine Engine { get; init; } = TranslationEngine.Google;
+
+    /// <summary>Where the Codex CLI is when it is not on PATH; empty to look on PATH only.</summary>
+    public string CodexExecutablePath { get; init; } = string.Empty;
 
     /// <summary>Only edited fields win; concurrent changes and the immediately saved theme are preserved.</summary>
     public Result<AppSettings> MergeDraft(AppSettings draft, AppSettings original)
@@ -38,11 +42,19 @@ public sealed record AppSettings(
             return SettingsErrors.InvalidUiLanguage;
         }
 
+        if (!Enum.IsDefined(draft.Engine))
+        {
+            return SettingsErrors.InvalidEngine;
+        }
+
         return this with
         {
             Hotkey = draft.Hotkey == original.Hotkey ? Hotkey : draft.Hotkey,
             Languages = draft.Languages == original.Languages ? Languages : draft.Languages,
             UiLanguage = draft.UiLanguage == original.UiLanguage ? UiLanguage : draft.UiLanguage,
+            Engine = draft.Engine == original.Engine ? Engine : draft.Engine,
+            CodexExecutablePath = draft.CodexExecutablePath == original.CodexExecutablePath
+                ? CodexExecutablePath : NormalizePath(draft.CodexExecutablePath),
             Behavior = new BehaviorSettings(
                 draft.Behavior.CaptureSelectionOnHotkey == original.Behavior.CaptureSelectionOnHotkey
                     ? Behavior.CaptureSelectionOnHotkey : draft.Behavior.CaptureSelectionOnHotkey,
@@ -52,6 +64,9 @@ public sealed record AppSettings(
                     ? Behavior.AutoTranslateOnCapture : draft.Behavior.AutoTranslateOnCapture),
         };
     }
+
+    /// <summary>A path as typed or pasted: Explorer's "Copy as path" wraps it in quotes.</summary>
+    public static string NormalizePath(string? path) => (path ?? string.Empty).Trim().Trim('"').Trim();
 
     public Result<AppSettings> WithTheme(AppTheme theme) =>
         Enum.IsDefined(theme) ? this with { Theme = theme } : SettingsErrors.InvalidTheme;

@@ -1,10 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
+using MiniTranslator.Adapters.ClaudeCli;
+using MiniTranslator.Adapters.CodexCli;
 using MiniTranslator.Adapters.GoogleTranslate;
 using MiniTranslator.Adapters.JsonSettings;
 using MiniTranslator.Adapters.Windows;
+using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Application.Hotkeys;
 using MiniTranslator.Application.Settings;
+using MiniTranslator.Application.Translations;
 using MiniTranslator.Application.UseCases;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Presentation.ViewModels;
 using MiniTranslator.Wpf.Services;
 
@@ -20,6 +25,8 @@ internal static class CompositionRoot
         new ServiceCollection()
             .AddCore()
             .AddGoogleTranslator()
+            .AddClaudeCliTranslator()
+            .AddCodexCliTranslator(System.IO.Path.Combine(AppPaths.Default.Root, "codex"))
             .AddJsonSettings()
             .AddWindowsDesktop()
             .AddPresentation()
@@ -30,6 +37,11 @@ internal static class CompositionRoot
     {
         services.AddSingleton<SettingsStore>();
         services.AddSingleton<HotkeyManager>();
+
+        // Each adapter registers its translator under its engine; the app talks to whichever the settings select.
+        services.AddSingleton<ITranslator>(sp => new SelectedEngineTranslator(
+            sp.GetRequiredService<SettingsStore>(),
+            engine => sp.GetRequiredKeyedService<ITranslator>(engine)));
 
         services.AddTransient<TranslateTextUseCase>();
         services.AddTransient<ChangeLanguagesUseCase>();

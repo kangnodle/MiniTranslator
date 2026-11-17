@@ -63,7 +63,7 @@ public class SettingsStoreConcurrencyTests
         var original = store.Current;
         var japanese = LanguagePair.Create("en", "ja").Value;
         var first = new ChangeLanguagesUseCase(store).ExecuteAsync(japanese);
-        var editor = new SettingsEditor(store, new HotkeyManager(new FakeGlobalHotkey()), new FakeStartupRegistration());
+        var editor = new SettingsEditor(store, new HotkeyManager(new FakeGlobalHotkey()), new FakeStartupRegistration(), new FakeCodexAccount());
         var draft = original with { Behavior = original.Behavior with { HideOnDeactivate = false } };
         var second = editor.SaveAsync(draft, startWithWindows: false);
 

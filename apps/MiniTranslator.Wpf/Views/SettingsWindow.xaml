@@ -153,6 +153,62 @@
                 </Border>
 
                 <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel>
+                        <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource TranslationEngine}"
+                               Target="{Binding ElementName=EngineBox}" />
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource TranslationEngineHint}" />
+                        <ComboBox x:Name="EngineBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
+                                  AutomationProperties.Name="{DynamicResource TranslationEngine}"
+                                  SelectedValuePath="Tag" SelectedValue="{Binding Engine}">
+                            <ComboBoxItem Content="{DynamicResource EngineGoogle}" Tag="{x:Static settings:TranslationEngine.Google}" />
+                            <ComboBoxItem Content="{DynamicResource EngineClaude}" Tag="{x:Static settings:TranslationEngine.Claude}" />
+                            <ComboBoxItem Content="{DynamicResource EngineCodex}" Tag="{x:Static settings:TranslationEngine.Codex}" />
+                        </ComboBox>
+                        <StackPanel Margin="0,16,0,0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Engine}" Value="{x:Static settings:TranslationEngine.Codex}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource CodexExecutablePath}"
+                                   Target="{Binding ElementName=CodexExecutablePathBox}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexExecutablePathHint}" />
+                            <TextBox x:Name="CodexExecutablePathBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
+                                     AutomationProperties.Name="{DynamicResource CodexExecutablePath}"
+                                     Text="{Binding CodexExecutablePath, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Margin="0,16,0,0" Text="{DynamicResource CodexAccount}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexAccountHint}" />
+                            <controls:LiveTextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                                                   AutomationProperties.LiveSetting="Polite"
+                                                   Text="{Binding CodexAccountText}"
+                                                   Visibility="{Binding CodexAccountText, Converter={StaticResource HasValueToVisibility}}" />
+                            <controls:LiveTextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                                                   AutomationProperties.LiveSetting="Assertive"
+                                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                   Text="{Binding CodexAccountError}"
+                                                   Visibility="{Binding CodexAccountError, Converter={StaticResource HasValueToVisibility}}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button MinWidth="120" MinHeight="32" Padding="16,6"
+                                        Command="{Binding SignInToCodexCommand}" Content="{DynamicResource CodexSignIn}"
+                                        Visibility="{Binding CanOfferCodexSignIn, Converter={StaticResource BooleanToVisibility}}" />
+                                <Button MinWidth="120" MinHeight="32" Padding="16,6"
+                                        Command="{Binding SignInToCodexCancelCommand}" Content="{DynamicResource CodexSignInCancel}"
+                                        Visibility="{Binding IsCodexSigningIn, Converter={StaticResource BooleanToVisibility}}" />
+                                <Button MinWidth="120" MinHeight="32" Padding="16,6"
+                                        Command="{Binding SignOutOfCodexCommand}" Content="{DynamicResource CodexSignOut}"
+                                        Visibility="{Binding IsCodexSignedIn, Converter={StaticResource BooleanToVisibility}}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />

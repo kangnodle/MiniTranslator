@@ -141,6 +141,6 @@ public class UiLanguageTests
     private static SettingsViewModel Create(SettingsStore store)
     {
         var hotkeys = new HotkeyManager(new FakeGlobalHotkey());
-        return new SettingsViewModel(new SettingsEditor(store, hotkeys, new FakeStartupRegistration()));
+        return new SettingsViewModel(new SettingsEditor(store, hotkeys, new FakeStartupRegistration(), new FakeCodexAccount()));
     }
 }

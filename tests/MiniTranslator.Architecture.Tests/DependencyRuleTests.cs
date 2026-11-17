@@ -2,6 +2,8 @@ using System.Reflection;
 using MiniTranslator.Application.Settings;
 using MiniTranslator.Domain.Common;
 using MiniTranslator.Presentation.ViewModels;
+using ClaudeCli = MiniTranslator.Adapters.ClaudeCli.ServiceCollectionExtensions;
+using CodexCli = MiniTranslator.Adapters.CodexCli.ServiceCollectionExtensions;
 using GoogleTranslate = MiniTranslator.Adapters.GoogleTranslate.ServiceCollectionExtensions;
 using JsonSettings = MiniTranslator.Adapters.JsonSettings.ServiceCollectionExtensions;
 using WindowsDesktop = MiniTranslator.Adapters.Windows.ServiceCollectionExtensions;
@@ -27,6 +29,8 @@ public class DependencyRuleTests
         { Domain, [] },
         { Application, [Domain] },
         { "MiniTranslator.Presentation", [Domain, Application] },
+        { "MiniTranslator.Adapters.ClaudeCli", [Domain, Application] },
+        { "MiniTranslator.Adapters.CodexCli", [Domain, Application] },
         { "MiniTranslator.Adapters.GoogleTranslate", [Domain, Application] },
         { "MiniTranslator.Adapters.JsonSettings", [Domain, Application] },
         { "MiniTranslator.Adapters.Windows", [Domain, Application] },
@@ -64,6 +68,8 @@ public class DependencyRuleTests
     }
 
     [Theory]
+    [InlineData("MiniTranslator.Adapters.ClaudeCli")]
+    [InlineData("MiniTranslator.Adapters.CodexCli")]
     [InlineData("MiniTranslator.Adapters.GoogleTranslate")]
     [InlineData("MiniTranslator.Adapters.JsonSettings")]
     public void Portable_adapters_do_not_need_windows(string package)
@@ -88,6 +94,8 @@ public class DependencyRuleTests
         typeof(Error).Assembly,
         typeof(SettingsStore).Assembly,
         typeof(TranslatorViewModel).Assembly,
+        typeof(ClaudeCli).Assembly,
+        typeof(CodexCli).Assembly,
         typeof(GoogleTranslate).Assembly,
         typeof(JsonSettings).Assembly,
         typeof(WindowsDesktop).Assembly,

@@ -24,7 +24,7 @@ public class SettingsViewModelTests
         var repository = new DelayedSettingsRepository();
         var store = new SettingsStore(repository);
         using var manager = new HotkeyManager(new FakeGlobalHotkey());
-        var vm = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration()));
+        var vm = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount()));
         AppTheme? applied = null;
         vm.ThemeChanged += (_, theme) => applied = theme;
 
@@ -49,7 +49,7 @@ public class SettingsViewModelTests
         var store = new SettingsStore(new InMemorySettingsRepository(AppSettings.Default with { Theme = theme }));
         await store.InitializeAsync();
         using var manager = new HotkeyManager(new FakeGlobalHotkey());
-        var vm = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration()));
+        var vm = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount()));
 
         Assert.Equal(theme, vm.Theme);
     }
@@ -128,7 +128,7 @@ public class SettingsViewModelTests
         var hotkey = new FakeGlobalHotkey();
         var manager = new HotkeyManager(hotkey);
         manager.Apply(store.Current.Hotkey);
-        return (new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration())), repository, hotkey);
+        return (new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount())), repository, hotkey);
     }
 
     private sealed class DelayedSettingsRepository : ISettingsRepository
@@ -167,6 +167,32 @@ public class SettingsViewModelTests
         Assert.Equal(expected, hotkey.Registered);
         Assert.Equal(expected, repository.Saved?.Hotkey);
         Assert.False(repository.Saved?.Behavior.HideOnDeactivate);
+    }
+
+    [Fact]
+    public async Task Save_applies_the_chosen_translation_engine()
+    {
+        var (vm, repository, _) = Create();
+        Assert.Equal(TranslationEngine.Google, vm.Engine);
+
+        vm.Engine = TranslationEngine.Claude;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(TranslationEngine.Claude, repository.Saved?.Engine);
+    }
+
+    [Fact]
+    public async Task Save_applies_the_codex_engine_and_its_executable_path()
+    {
+        var (vm, repository, _) = Create();
+        Assert.Equal("", vm.CodexExecutablePath);
+
+        vm.Engine = TranslationEngine.Codex;
+        vm.CodexExecutablePath = @"""C:\Tools\codex.exe""";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(TranslationEngine.Codex, repository.Saved?.Engine);
+        Assert.Equal(@"C:\Tools\codex.exe", repository.Saved?.CodexExecutablePath);
     }
 
     [Fact]

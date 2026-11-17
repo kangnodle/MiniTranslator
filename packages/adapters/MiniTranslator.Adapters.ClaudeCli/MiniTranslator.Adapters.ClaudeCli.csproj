@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Adapter: implements ITranslator through the locally installed Claude Code CLI, which owns sign-in and credentials.
+    ClaudeCliProtocol is the pure argument/message/event mapping; ClaudeCliTranslator manages the long-lived session
+    and ClaudeProcess is the thin child-process shell.
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(PortableTargetFramework)</TargetFramework>
+    <RootNamespace>MiniTranslator.Adapters.ClaudeCli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\core\MiniTranslator.Application\MiniTranslator.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MiniTranslator.Adapters.ClaudeCli.Tests" />
+  </ItemGroup>
+
+</Project>

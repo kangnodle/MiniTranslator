@@ -14,6 +14,10 @@ internal sealed class SettingsDocument
     public string? Theme { get; set; }
     public string? UiLanguage { get; set; }
 
+    public string? Engine { get; set; }
+
+    public string? CodexExecutablePath { get; set; }
+
     public BehaviorDocument? Behavior { get; set; }
 
     internal sealed class BehaviorDocument

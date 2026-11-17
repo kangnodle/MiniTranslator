@@ -105,4 +105,33 @@ Look for its icon in the system tray.</value></data>
   <data name="Startup.WriteFailed" xml:space="preserve"><value>Could not change the startup setting.</value></data>
   <data name="Startup.InvalidExecutable" xml:space="preserve"><value>Could not register startup. Run the installed MiniTranslator.exe and keep its full path within 258 characters.</value></data>
   <data name="AllRightsReserved" xml:space="preserve"><value>All rights reserved.</value></data>
+  <data name="TranslationEngine" xml:space="preserve"><value>Translation engine</value></data>
+  <data name="TranslationEngineHint" xml:space="preserve"><value>Google is fast and needs no sign-in. Claude and Codex handle context and tone better but take 1–3 seconds longer, and need Claude Code or the Codex CLI installed and signed in.</value></data>
+  <data name="EngineGoogle" xml:space="preserve"><value>Google Translate</value></data>
+  <data name="EngineClaude" xml:space="preserve"><value>Claude (uses your Claude Code sign-in)</value></data>
+  <data name="EngineCodex" xml:space="preserve"><value>Codex (uses your ChatGPT sign-in)</value></data>
+  <data name="CodexExecutablePath" xml:space="preserve"><value>Codex executable path (optional)</value></data>
+  <data name="CodexAccount" xml:space="preserve"><value>Codex sign-in</value></data>
+  <data name="CodexAccountHint" xml:space="preserve"><value>Sign in with your ChatGPT account. The Codex CLI keeps the sign-in in a profile used only by MiniTranslator.</value></data>
+  <data name="CodexAccountChecking" xml:space="preserve"><value>Checking the sign-in…</value></data>
+  <data name="CodexSignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="CodexSignedIn" xml:space="preserve"><value>Signed in</value></data>
+  <data name="CodexSignedOut" xml:space="preserve"><value>Not signed in.</value></data>
+  <data name="CodexSignInWaiting" xml:space="preserve"><value>Finish signing in in your browser. This updates automatically when you are done.</value></data>
+  <data name="CodexSigningOut" xml:space="preserve"><value>Signing out…</value></data>
+  <data name="CodexSignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="CodexSignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="CodexSignInCancel" xml:space="preserve"><value>Cancel sign-in</value></data>
+  <data name="CodexExecutablePathHint" xml:space="preserve"><value>Leave empty to find codex on PATH. Enter the full path to codex.exe only when it is not on PATH.</value></data>
+  <data name="Settings.InvalidEngine" xml:space="preserve"><value>Select a valid translation engine.</value></data>
+  <data name="Translation.ClaudeUnavailable" xml:space="preserve"><value>Could not run Claude Code. Install Claude Code and sign in with 'claude auth login' in a terminal, or switch the translation engine to Google in Settings.</value></data>
+  <data name="Translation.ClaudeFailed" xml:space="preserve"><value>Claude could not complete the translation. Check your sign-in with 'claude auth status' in a terminal, then try again.</value></data>
+  <data name="Translation.ClaudeTimedOut" xml:space="preserve"><value>Claude did not respond in time. Try again.</value></data>
+  <data name="Translation.CodexUnavailable" xml:space="preserve"><value>Could not run the Codex CLI. Install the Codex CLI and add it to PATH, or set the Codex executable path in Settings. You can also switch the translation engine to Google.</value></data>
+  <data name="Translation.CodexSignedOut" xml:space="preserve"><value>Codex is not signed in. Sign in to Codex under Settings → Translation engine, then try again.</value></data>
+  <data name="Translation.CodexFailed" xml:space="preserve"><value>Codex could not complete the translation. Try again.</value></data>
+  <data name="Translation.CodexTimedOut" xml:space="preserve"><value>Codex did not respond in time. Try again.</value></data>
+  <data name="Translation.CodexAccountFailed" xml:space="preserve"><value>Could not check or change the Codex sign-in. Try again.</value></data>
+  <data name="Translation.CodexSignInFailed" xml:space="preserve"><value>Could not complete the Codex sign-in. Try again.</value></data>
+  <data name="Translation.CodexAccountTimedOut" xml:space="preserve"><value>The Codex sign-in did not finish in time. Try again.</value></data>
 </root>

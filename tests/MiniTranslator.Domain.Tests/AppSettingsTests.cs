@@ -59,6 +59,61 @@ public class AppSettingsTests
     }
 
     [Fact]
+    public void An_invalid_engine_is_rejected()
+    {
+        var result = AppSettings.Default.MergeDraft(
+            AppSettings.Default with { Engine = (TranslationEngine)99 }, AppSettings.Default);
+
+        Assert.Equal(SettingsErrors.InvalidEngine, result.Error);
+    }
+
+    [Fact]
+    public void Google_is_the_default_engine()
+    {
+        Assert.Equal(TranslationEngine.Google, AppSettings.Default.Engine);
+    }
+
+    [Fact]
+    public void An_edited_engine_wins_and_an_untouched_one_keeps_the_value_saved_elsewhere()
+    {
+        var original = AppSettings.Default;
+        var current = original with { Engine = TranslationEngine.Claude };
+
+        Assert.Equal(TranslationEngine.Claude, current.MergeDraft(original, original).Value.Engine);
+        Assert.Equal(TranslationEngine.Claude,
+            original.MergeDraft(original with { Engine = TranslationEngine.Claude }, original).Value.Engine);
+    }
+
+    [Fact]
+    public void An_edited_codex_path_wins_and_an_untouched_one_keeps_the_value_saved_elsewhere()
+    {
+        var original = AppSettings.Default;
+        var current = original with { CodexExecutablePath = @"C:\saved\codex.exe" };
+
+        Assert.Equal(@"C:\saved\codex.exe", current.MergeDraft(original, original).Value.CodexExecutablePath);
+        Assert.Equal(@"C:\edited\codex.exe",
+            current.MergeDraft(original with { CodexExecutablePath = @"C:\edited\codex.exe" }, original).Value.CodexExecutablePath);
+    }
+
+    [Theory]
+    [InlineData(@"  C:\Tools\codex.exe  ", @"C:\Tools\codex.exe")]
+    [InlineData(@"""C:\Program Files\Codex\codex.exe"" ", @"C:\Program Files\Codex\codex.exe")]
+    [InlineData("   ", "")]
+    [InlineData(null, "")]
+    public void A_pasted_codex_path_loses_its_quotes_and_padding(string? typed, string expected)
+    {
+        Assert.Equal(expected, AppSettings.NormalizePath(typed));
+    }
+
+    [Fact]
+    public void An_edited_codex_path_is_normalized_when_merged()
+    {
+        var draft = AppSettings.Default with { CodexExecutablePath = @" ""C:\Tools\codex.exe"" " };
+
+        Assert.Equal(@"C:\Tools\codex.exe", AppSettings.Default.MergeDraft(draft, AppSettings.Default).Value.CodexExecutablePath);
+    }
+
+    [Fact]
     public void An_invalid_theme_is_rejected()
     {
         Assert.Equal(SettingsErrors.InvalidTheme, AppSettings.Default.WithTheme((AppTheme)99).Error);

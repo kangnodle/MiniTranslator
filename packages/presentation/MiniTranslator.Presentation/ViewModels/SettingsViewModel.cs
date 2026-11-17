@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Application.Settings;
 using MiniTranslator.Domain.Common;
 using MiniTranslator.Domain.Hotkeys;
@@ -29,6 +30,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         var current = editor.Original;
         _theme = current.Theme;
         _uiLanguage = current.UiLanguage;
+        _engine = current.Engine;
+        _codexExecutablePath = current.CodexExecutablePath;
         _hotkey = current.Hotkey;
         _languages = current.Languages;
         _sourceLanguage = _languages.Source;
@@ -36,6 +39,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         _captureSelectionOnHotkey = current.Behavior.CaptureSelectionOnHotkey;
         _hideOnDeactivate = current.Behavior.HideOnDeactivate;
         _autoTranslateOnCapture = current.Behavior.AutoTranslateOnCapture;
+
+        if (_engine == TranslationEngine.Codex)
+        {
+            RefreshCodexAccountCommand.Execute(null);
+        }
     }
 
     public event EventHandler? CloseRequested;
@@ -188,6 +196,114 @@ public sealed partial class SettingsViewModel : ObservableObject
     private UiLanguage _uiLanguage;
 
     [ObservableProperty]
+    private TranslationEngine _engine;
+
+    [ObservableProperty]
+    private string _codexExecutablePath;
+
+    // ── Codex sign-in ─────────────────────────────────────────────────────
+
+    /// <summary>Who is signed in, or what is being waited for.</summary>
+    [ObservableProperty]
+    private string? _codexAccountText;
+
+    [ObservableProperty]
+    private string? _codexAccountError;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanOfferCodexSignIn))]
+    private bool _isCodexSignedIn;
+
+    /// <summary>The browser step is open; it can be cancelled.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanOfferCodexSignIn))]
+    private bool _isCodexSigningIn;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCodexAccountCommand), nameof(SignInToCodexCommand), nameof(SignOutOfCodexCommand))]
+    private bool _isCodexBusy;
+
+    /// <summary>Whether to show the sign-in button rather than sign-out or cancel.</summary>
+    public bool CanOfferCodexSignIn => !IsCodexSignedIn && !IsCodexSigningIn;
+
+    private bool IsCodexIdle => !IsCodexBusy;
+
+    partial void OnEngineChanged(TranslationEngine value)
+    {
+        if (value == TranslationEngine.Codex && RefreshCodexAccountCommand.CanExecute(null))
+        {
+            RefreshCodexAccountCommand.Execute(null);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsCodexIdle))]
+    private Task RefreshCodexAccountAsync() =>
+        RunCodexAsync("CodexAccountChecking", token => _editor.ReadCodexAccountAsync(CodexExecutablePath, token), CancellationToken.None);
+
+    /// <summary>Signing in happens at once, like the theme: it is not undone by cancelling the settings.</summary>
+    [RelayCommand(CanExecute = nameof(IsCodexIdle), IncludeCancelCommand = true)]
+    private async Task SignInToCodexAsync(CancellationToken cancellationToken)
+    {
+        IsCodexSigningIn = true;
+        try
+        {
+            await RunCodexAsync("CodexSignInWaiting", token => _editor.SignInToCodexAsync(CodexExecutablePath, token), cancellationToken);
+        }
+        finally
+        {
+            IsCodexSigningIn = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsCodexIdle))]
+    private Task SignOutOfCodexAsync() =>
+        RunCodexAsync("CodexSigningOut", token => _editor.SignOutOfCodexAsync(CodexExecutablePath, token), CancellationToken.None);
+
+    private async Task RunCodexAsync(
+        string progressText,
+        Func<CancellationToken, Task<Result<CodexAccountState>>> operation,
+        CancellationToken cancellationToken)
+    {
+        IsCodexBusy = true;
+        CodexAccountError = null;
+        CodexAccountText = UiText.Get(progressText, _editor.Current.UiLanguage);
+        try
+        {
+            var state = await operation(cancellationToken);
+            if (state.IsFailure)
+            {
+                // What the CLI holds is unknown now, so the last known sign-in state stays as it was.
+                CodexAccountText = null;
+                CodexAccountError = LocalizeError(state.Error);
+                return;
+            }
+
+            IsCodexSignedIn = state.Value.SignedIn;
+            CodexAccountText = DescribeCodexAccount(state.Value);
+        }
+        catch (OperationCanceledException)
+        {
+            // The user abandoned the browser step; nothing changed.
+            CodexAccountText = DescribeCodexAccount(CodexAccountState.SignedOut);
+        }
+        finally
+        {
+            IsCodexBusy = false;
+        }
+    }
+
+    private string DescribeCodexAccount(CodexAccountState state)
+    {
+        var language = _editor.Current.UiLanguage;
+        return state switch
+        {
+            { SignedIn: false } => UiText.Get("CodexSignedOut", language),
+            { Email: { Length: > 0 } email } => UiText.Format("CodexSignedInAs", language, email),
+            _ => UiText.Get("CodexSignedIn", language),
+        };
+    }
+
+    [ObservableProperty]
     private bool _startWithWindows;
 
     [ObservableProperty]
@@ -207,7 +323,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             Hotkey,
             _languages,
             new BehaviorSettings(CaptureSelectionOnHotkey, HideOnDeactivate, AutoTranslateOnCapture))
-        { UiLanguage = UiLanguage };
+        { UiLanguage = UiLanguage, Engine = Engine, CodexExecutablePath = CodexExecutablePath ?? string.Empty };
 
         var saved = await _editor.SaveAsync(draft, StartWithWindows);
         if (saved.Settings.IsFailure)
@@ -221,11 +337,19 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
 
         SaveError = null;
+        AbandonCodexSignIn();
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
-    private void Cancel() => CloseRequested?.Invoke(this, EventArgs.Empty);
+    private void Cancel()
+    {
+        AbandonCodexSignIn();
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Stops waiting for the browser when the settings screen goes away.</summary>
+    public void AbandonCodexSignIn() => SignInToCodexCancelCommand.Execute(null);
 
     private string LocalizeError(Error error) => UiText.Error(error, _editor.Current.UiLanguage);
 }

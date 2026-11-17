@@ -14,13 +14,15 @@ public sealed class SettingsEditor
     private readonly SettingsStore _settings;
     private readonly HotkeyManager _hotkeys;
     private readonly IStartupRegistration _startup;
+    private readonly ICodexAccount _codexAccount;
     private bool _startWithWindows;
 
-    public SettingsEditor(SettingsStore settings, HotkeyManager hotkeys, IStartupRegistration startup)
+    public SettingsEditor(SettingsStore settings, HotkeyManager hotkeys, IStartupRegistration startup, ICodexAccount codexAccount)
     {
         _settings = settings;
         _hotkeys = hotkeys;
         _startup = startup;
+        _codexAccount = codexAccount;
         Original = settings.Current;
         StartupState = startup.ReadEnabled();
         _startWithWindows = StartupState.GetValueOrDefault(false);
@@ -32,6 +34,19 @@ public sealed class SettingsEditor
 
     public void BeginHotkeyRecording() => _hotkeys.Suspend();
     public Result<Unit> EndHotkeyRecording() => _hotkeys.Resume();
+
+    /// <summary>
+    /// Codex sign-in, using the CLI path as typed in the draft. It takes effect immediately and is not part of
+    /// saving: cancelling the settings does not undo a sign-in or sign-out.
+    /// </summary>
+    public Task<Result<CodexAccountState>> ReadCodexAccountAsync(string? executablePath, CancellationToken cancellationToken = default) =>
+        _codexAccount.ReadAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
+
+    public Task<Result<CodexAccountState>> SignInToCodexAsync(string? executablePath, CancellationToken cancellationToken = default) =>
+        _codexAccount.SignInAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
+
+    public Task<Result<CodexAccountState>> SignOutOfCodexAsync(string? executablePath, CancellationToken cancellationToken = default) =>
+        _codexAccount.SignOutAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
 
     public Task<Result<AppSettings>> SetThemeAsync(AppTheme theme, CancellationToken cancellationToken = default)
     {

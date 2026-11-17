@@ -1,6 +1,7 @@
 using MiniTranslator.Application.Hotkeys;
 using MiniTranslator.Testing;
 using MiniTranslator.Application.Settings;
+using MiniTranslator.Application.Translations;
 using MiniTranslator.Application.UseCases;
 using MiniTranslator.Domain.Common;
 using MiniTranslator.Domain.Hotkeys;
@@ -82,6 +83,43 @@ public class TranslateTextUseCaseTests
 
         Assert.Equal(TranslationErrors.EmptyText, result.Error);
         Assert.Empty(translator.Calls);
+    }
+}
+
+public class SelectedEngineTranslatorTests
+{
+    private static readonly TranslationRequest Request = TranslationRequest.Create("hello", LanguagePair.Default).Value;
+
+    [Fact]
+    public async Task Uses_the_engine_selected_when_each_request_is_made()
+    {
+        var store = new SettingsStore(new InMemorySettingsRepository());
+        var google = new FakeTranslator();
+        var claude = new FakeTranslator();
+        var translator = new SelectedEngineTranslator(store, engine => engine == TranslationEngine.Claude ? claude : google);
+
+        await translator.TranslateAsync(Request);
+        await store.UpdateAsync(s => s with { Engine = TranslationEngine.Claude });
+        await translator.TranslateAsync(Request);
+        await translator.TranslateAsync(Request);
+
+        Assert.Single(google.Calls);
+        Assert.Equal(2, claude.Calls.Count);
+    }
+
+    [Fact]
+    public async Task Does_not_resolve_an_engine_that_is_never_selected()
+    {
+        var resolved = new List<TranslationEngine>();
+        var translator = new SelectedEngineTranslator(new SettingsStore(new InMemorySettingsRepository()), engine =>
+        {
+            resolved.Add(engine);
+            return new FakeTranslator();
+        });
+
+        await translator.TranslateAsync(Request);
+
+        Assert.Equal([TranslationEngine.Google], resolved);
     }
 }
 
@@ -168,7 +206,7 @@ public class SettingsEditorTests
     {
         var repository = new InMemorySettingsRepository();
         var hotkey = new FakeGlobalHotkey();
-        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), new FakeStartupRegistration());
+        var editor = new SettingsEditor(new SettingsStore(repository), new HotkeyManager(hotkey), new FakeStartupRegistration(), new FakeCodexAccount());
         var draft = AppSettings.Default with { Hotkey = CtrlAltT };
 
         var result = await editor.SaveAsync(draft, startWithWindows: false);
@@ -186,7 +224,7 @@ public class SettingsEditorTests
         var manager = new HotkeyManager(hotkey);
         manager.Apply(HotkeyGesture.Default);
         hotkey.Taken.Add(CtrlAltT);
-        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration());
+        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration(), new FakeCodexAccount());
 
         var result = await editor.SaveAsync(AppSettings.Default with { Hotkey = CtrlAltT }, startWithWindows: false);
 
@@ -202,7 +240,7 @@ public class SettingsEditorTests
         var hotkey = new FakeGlobalHotkey();
         var manager = new HotkeyManager(hotkey);
         manager.Apply(HotkeyGesture.Default);
-        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration());
+        var editor = new SettingsEditor(new SettingsStore(repository), manager, new FakeStartupRegistration(), new FakeCodexAccount());
 
         var result = await editor.SaveAsync(AppSettings.Default with { Hotkey = CtrlAltT }, startWithWindows: false);
 

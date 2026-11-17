@@ -63,7 +63,7 @@ public class WindowUxTests
                     store, new FakeClipboard());
                 var translator = new TranslatorWindow(viewModel) { AllowClose = true };
                 var hotkeys = new HotkeyManager(new FakeGlobalHotkey());
-                var settingsViewModel = new SettingsViewModel(new SettingsEditor(store, hotkeys, new FakeStartupRegistration()));
+                var settingsViewModel = new SettingsViewModel(new SettingsEditor(store, hotkeys, new FakeStartupRegistration(), new FakeCodexAccount()));
                 var settings = new SettingsWindow(settingsViewModel);
                 try
                 {

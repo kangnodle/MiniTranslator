@@ -15,7 +15,7 @@ public class SettingsDraftTests
     {
         var store = new SettingsStore(new InMemorySettingsRepository());
         var manager = new HotkeyManager(new FakeGlobalHotkey());
-        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration()));
+        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount()));
         var japanese = LanguagePair.Create("en", "ja").Value;
         await new ChangeLanguagesUseCase(store).ExecuteAsync(japanese);
 
@@ -31,7 +31,7 @@ public class SettingsDraftTests
     {
         var store = new SettingsStore(new InMemorySettingsRepository());
         var manager = new HotkeyManager(new FakeGlobalHotkey());
-        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration()));
+        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount()));
         await store.UpdateAsync(s => s with { Behavior = s.Behavior with { CaptureSelectionOnHotkey = false } });
 
         viewModel.HideOnDeactivate = false;
@@ -47,7 +47,7 @@ public class SettingsDraftTests
         var store = new SettingsStore(new InMemorySettingsRepository());
         var hotkey = new FakeGlobalHotkey();
         var manager = new HotkeyManager(hotkey);
-        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration()));
+        var viewModel = new SettingsViewModel(new SettingsEditor(store, manager, new FakeStartupRegistration(), new FakeCodexAccount()));
         var newHotkey = HotkeyGesture.Parse("Ctrl+Alt+T").Value;
         manager.Apply(newHotkey);
         await store.UpdateAsync(s => s with { Hotkey = newHotkey, Languages = LanguagePair.Create("en", "fr").Value });
