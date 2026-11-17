@@ -31,4 +31,5 @@ echo "Testing..."
 dotnet test MiniTranslator.slnx --no-build --no-restore
 
 echo "Running MiniTranslator (exit through the tray menu)..."
+if [[ $# -eq 0 ]]; then set -- --show; fi
 dotnet run --project apps/MiniTranslator.Wpf --no-build --no-restore -- "$@"

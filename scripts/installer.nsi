@@ -24,11 +24,19 @@ InstallDirRegKey HKCU "${UNINSTALL_KEY}" "InstallLocation"
 !insertmacro MUI_LANGUAGE "English"
 
 Function .onInit
+!if "${APP_RUNTIME}" == "win-arm64"
+    ${IfNot} ${IsNativeARM64}
+        MessageBox MB_OK|MB_ICONSTOP "This installer requires Windows on ARM64." /SD IDOK
+        SetErrorLevel 1
+        Quit
+    ${EndIf}
+!else
     ${IfNot} ${RunningX64}
         MessageBox MB_OK|MB_ICONSTOP "MiniTranslator requires 64-bit Windows." /SD IDOK
         SetErrorLevel 1
         Quit
     ${EndIf}
+!endif
     SetShellVarContext current
     SetRegView 64
 FunctionEnd
@@ -40,7 +48,9 @@ FunctionEnd
 
 Section "MiniTranslator"
     SetOutPath "$INSTDIR"
-    File /oname=MiniTranslator.exe "${APP_EXE}"
+    File "${APP_DIRECTORY}\MiniTranslator.exe"
+    File /r /x MiniTranslator.exe "${APP_DIRECTORY}\*"
+    SetOutPath "$INSTDIR"
     WriteUninstaller "$INSTDIR\Uninstall.exe"
     CreateShortcut "$SMPROGRAMS\MiniTranslator.lnk" "$INSTDIR\MiniTranslator.exe" "--show"
     WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayName" "MiniTranslator"
@@ -62,6 +72,7 @@ Section "Uninstall"
         SetErrorLevel 1
         Abort
     ${EndIf}
+    !include "${UNINSTALL_LIST}"
     Delete "$INSTDIR\Uninstall.exe"
     Delete "$SMPROGRAMS\MiniTranslator.lnk"
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "MiniTranslator"

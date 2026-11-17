@@ -34,6 +34,7 @@ try {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     Write-Host 'Running MiniTranslator (exit through the tray menu)...'
+    if ($args.Count -eq 0) { $args = @('--show') }
     & dotnet run --project apps/MiniTranslator.Wpf --no-build --no-restore -- @args
     exit $LASTEXITCODE
 }

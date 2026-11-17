@@ -146,25 +146,25 @@ Clean Architecture — 의존성은 항상 안쪽(Domain)을 향합니다.
 Windows와 `global.json`에 지정된 .NET SDK가 필요합니다. 전체 검증 후 실행:
 
 ```powershell
-.\scripts\run.ps1 --show
+.\scripts\run.ps1
 ```
 
 Windows의 Git Bash/MSYS에서는:
 
 ```bash
-bash scripts/run.sh --show
+bash scripts/run.sh
 ```
 
 두 스크립트는 저장소의 `global.json`을 기준으로 .NET 11 SDK 선택을 확인한 다음 의존성 복원 → 솔루션 전체 C# 포맷팅 → 린팅 검사 → 빌드 → 테스트 → 앱 실행 순서로 동작합니다.
 포맷팅은 소스 파일을 수정하며, 어느 단계든 실패하면 즉시 중단합니다. 추가 인자는 앱에 전달됩니다.
-인자 없이 실행하면 트레이에 상주하며, 트레이 메뉴의 **종료**로 프로세스를 끝냅니다.
+인자 없이 스크립트를 실행하면 번역 창이 열리고 작업표시줄에 표시됩니다. 창을 닫으면 트레이에 상주하며, 트레이 메뉴의 **종료**로 프로세스를 끝냅니다.
 
 명령을 따로 실행하려면:
 
 ```powershell
 dotnet build
 dotnet test
-dotnet run --project apps/MiniTranslator.Wpf
+dotnet run --project apps/MiniTranslator.Wpf -- --show
 ```
 
 실행 인자: `--show` (시작 시 번역 창 열기), `--settings` (시작 시 설정 열기)
@@ -186,7 +186,7 @@ WPF 화면 회귀 검사: `dotnet test tests/MiniTranslator.Wpf.Tests`. 실제 X
 
 ### 릴리스 설치 파일 만들기
 
-Windows와 .NET SDK, [NSIS 3](https://nsis.sourceforge.io/Download)가 필요합니다.
+Windows와 .NET SDK, [NSIS 3.04 이상](https://nsis.sourceforge.io/Download)이 필요합니다.
 `makensis.exe`를 PATH에 추가하거나 NSIS를 기본 `Program Files` 폴더에 설치합니다.
 
 ```powershell
@@ -194,14 +194,15 @@ Windows와 .NET SDK, [NSIS 3](https://nsis.sourceforge.io/Download)가 필요합
 ```
 
 Windows의 Git Bash/MSYS에서는 `bash scripts/release.sh`를 실행합니다.
-두 진입점은 같은 PowerShell 작업을 사용하며, 복원 → 포맷팅 → 린팅 → Release 빌드 → 전체 테스트 → 단일 실행 파일 번들링 → NSIS 설치 파일 생성 순서로 진행합니다.
+두 진입점은 같은 PowerShell 작업을 사용하며, 복원 → 포맷팅 → 린팅 → Release 빌드 → 전체 테스트 → x64·ARM64 게시 → NSIS 설치 파일 생성 순서로 진행합니다.
 실패하면 즉시 중단하며, 포맷팅은 C# 소스 파일을 수정합니다.
 
-- 번들: `artifacts/publish/win-x64/MiniTranslator.exe`
-- 설치 파일: `artifacts/MiniTranslator-<Version>-win-x64-Setup.exe`
+- 게시 폴더: `artifacts/publish/win-x64/`, `artifacts/publish/win-arm64/`
+- Windows x64 설치 파일: `artifacts/MiniTranslator-<Version>-win-x64-Setup.exe`
+- Windows ARM64 설치 파일: `artifacts/MiniTranslator-<Version>-win-arm64-Setup.exe`
 
 버전은 앱 프로젝트의 MSBuild `Version` 속성에서 읽습니다(기본값은 `Directory.Build.props`의 `0.2.0`).
-[런타임을 포함한 단일 파일 배포](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview)를 사용하므로 대상 PC에 .NET을 별도로 설치할 필요가 없습니다.
+설치 파일은 앱과 해당 아키텍처의 .NET 데스크톱 런타임을 함께 설치합니다. .NET 11 WPF의 단일 파일 실행 문제를 피하기 위해 실행 파일과 DLL을 같은 폴더에 배치합니다.
 설치 위치 기본값은 `%LOCALAPPDATA%\Programs\MiniTranslator`이며, 관리자 권한 없이 시작 메뉴 바로가기와 제거 항목을 등록합니다.
 설치·제거 전에 실행 중인 앱을 트레이 메뉴에서 종료하세요. 제거 시 사용자 설정은 보존하며, 생성한 실행 파일에는 코드 서명을 하지 않습니다.
 

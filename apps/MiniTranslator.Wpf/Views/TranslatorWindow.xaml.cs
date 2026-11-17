@@ -43,6 +43,7 @@ public partial class TranslatorWindow : Window
 
         Left = OffScreen;
         Top = OffScreen;
+        ShowInTaskbar = false;
         Show();
         _prewarming = true;
 
@@ -53,6 +54,7 @@ public partial class TranslatorWindow : Window
             {
                 _prewarming = false;
                 Hide();
+                ShowInTaskbar = true;
             }
         }, DispatcherPriority.ApplicationIdle);
     }
@@ -76,6 +78,7 @@ public partial class TranslatorWindow : Window
             Top = area.Top + Math.Max(0, (area.Height - Height) / 3);
         }
 
+        ShowInTaskbar = true;
         Show();
     }
 

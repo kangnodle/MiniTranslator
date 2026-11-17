@@ -13,7 +13,7 @@
         Width="600" Height="640" MinWidth="440" MinHeight="600"
         Background="{DynamicResource AppSurfaceBrush}"
         WindowStartupLocation="Manual"
-        ShowInTaskbar="False" ShowActivated="False" Topmost="True">
+        ShowActivated="False" Topmost="True">
 
     <Window.InputBindings>
         <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding TranslateCommand}" />

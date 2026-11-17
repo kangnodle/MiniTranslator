@@ -102,6 +102,8 @@ public class WindowUxTests
 
     private static void VerifyTranslator(TranslatorWindow window, TranslatorViewModel viewModel)
     {
+        Assert.True(window.ShowInTaskbar);
+
         var resultPanel = (Border)window.FindName("ResultPanel");
         var input = (TextBox)window.FindName("SourceTextBox");
         var result = (TextBox)window.FindName("ResultTextBox");
