@@ -4,10 +4,6 @@ using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Application.Settings;
 
-/// <summary>
-/// Single source of truth for the current <see cref="AppSettings"/>.
-/// Changes are expressed as pure functions (<c>AppSettings → AppSettings</c>) and persisted before being published.
-/// </summary>
 public sealed class SettingsStore(ISettingsRepository repository)
 {
     private readonly SemaphoreSlim _updates = new(1, 1);

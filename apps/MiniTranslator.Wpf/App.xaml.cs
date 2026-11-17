@@ -11,7 +11,6 @@ using MiniTranslator.Wpf.Services;
 
 namespace MiniTranslator.Wpf;
 
-/// <summary>Process entry: single-instance guard, builds the <see cref="CompositionRoot"/> and starts the shell.</summary>
 public partial class App : System.Windows.Application
 {
     private const string SingleInstanceMutexName = @"Local\MiniTranslator.SingleInstance";
@@ -55,7 +54,6 @@ public partial class App : System.Windows.Application
         _shell = _services.GetRequiredService<AppShell>();
         _shell.Start();
 
-        // Optional switches, e.g. for a Start-menu shortcut: --show opens the translator, --settings the settings.
         if (e.Args.Contains("--show", StringComparer.OrdinalIgnoreCase)) _shell.ShowTranslator();
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) _shell.ShowSettings();
     }

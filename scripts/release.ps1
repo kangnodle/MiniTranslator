@@ -23,7 +23,6 @@ if (-not $nsisPath) {
 
 Push-Location -LiteralPath (Split-Path -Parent $PSScriptRoot)
 try {
-    # Resolve global.json from the repository before running any build steps.
     $sdkVersion = & dotnet --version
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     if ($sdkVersion -notmatch '^11\.') {
@@ -71,7 +70,6 @@ try {
             Remove-Item -LiteralPath $publishDirectory -Recurse -Force
         }
 
-        # .NET 11 WPF loads mixed-mode assemblies such as DirectWriteForwarder.dll from disk.
         Write-Host "Publishing self-contained $runtime app..."
         & dotnet publish apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj --configuration Release --runtime $runtime --self-contained true --output $publishDirectory -p:PublishSingleFile=false -p:DebugType=embedded
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -80,7 +78,6 @@ try {
             throw "Publish did not produce MiniTranslator.exe for $runtime."
         }
 
-        # Remove only installed payload files and empty payload directories.
         $uninstallList = Join-Path $artifacts "$runtime-uninstall.nsh"
         $uninstallCommands = foreach ($file in Get-ChildItem -LiteralPath $publishDirectory -File -Recurse) {
             if ($file.FullName -ne $appExecutable) {

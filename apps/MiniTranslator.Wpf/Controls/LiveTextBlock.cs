@@ -4,7 +4,6 @@ using System.Windows.Controls;
 
 namespace MiniTranslator.Wpf.Controls;
 
-/// <summary>Announces changing status text without moving keyboard focus.</summary>
 public sealed class LiveTextBlock : TextBlock
 {
     static LiveTextBlock()

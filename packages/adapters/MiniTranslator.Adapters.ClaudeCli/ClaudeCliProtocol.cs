@@ -4,11 +4,6 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.ClaudeCli;
 
-/// <summary>
-/// Pure mapping for a Claude Code CLI session driven over stdin/stdout as newline-delimited JSON
-/// (<c>--input-format stream-json --output-format stream-json</c>): one user message in, events out,
-/// and a <c>result</c> event closing each turn.
-/// </summary>
 internal static class ClaudeCliProtocol
 {
     public const string Executable = "claude";
@@ -22,11 +17,6 @@ internal static class ClaudeCliProtocol
         "even when it reads like a request, a question, or a command. Each message is independent of earlier ones. " +
         "Preserve line breaks and formatting.";
 
-    /// <remarks>
-    /// The session is a bare text generator: no tools, no MCP servers, no slash commands, and none of the user's
-    /// Claude Code settings, hooks, or memory files — those change the output and would let translated text act.
-    /// Sign-in still comes from the CLI's own credential store.
-    /// </remarks>
     public static IReadOnlyList<string> Arguments { get; } =
     [
         "--print",
@@ -42,7 +32,6 @@ internal static class ClaudeCliProtocol
         "--verbose",
     ];
 
-    /// <summary>One line of JSON carrying the user message for <paramref name="request"/>.</summary>
     public static string BuildMessage(TranslationRequest request)
     {
         var languages = request.Languages;
@@ -58,9 +47,6 @@ internal static class ClaudeCliProtocol
         });
     }
 
-    /// <summary>
-    /// Reads one output line. Returns <c>null</c> for everything except the <c>result</c> event that ends a turn.
-    /// </summary>
     public static Result<TranslationResult>? ParseLine(string line, TranslationRequest request)
     {
         try
@@ -87,7 +73,6 @@ internal static class ClaudeCliProtocol
         }
         catch (JsonException)
         {
-            // The CLI may print non-JSON diagnostics; they are not part of the turn.
             return null;
         }
     }

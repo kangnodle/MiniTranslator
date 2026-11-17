@@ -1,10 +1,5 @@
 namespace MiniTranslator.Domain.Hotkeys;
 
-/// <summary>
-/// The keys that may be used as the main (non-modifier) key of a hotkey,
-/// with stable names used for display and persistence.
-/// Codes are Windows virtual-key codes, but this table is plain data with no OS dependency.
-/// </summary>
 public static class VirtualKeys
 {
     public const int Space = 0x20;
@@ -17,7 +12,6 @@ public static class VirtualKeys
 
     public static bool IsSupported(int virtualKey) => NamesByCode.ContainsKey(virtualKey);
 
-    /// <summary>True for Shift/Ctrl/Alt/Win keys (generic and left/right variants).</summary>
     public static bool IsModifier(int virtualKey) =>
         virtualKey is 0x10 or 0x11 or 0x12 or 0x5B or 0x5C or (>= 0xA0 and <= 0xA5);
 

@@ -13,9 +13,6 @@ using MiniTranslator.Wpf.Views;
 
 namespace MiniTranslator.Wpf.Services;
 
-/// <summary>
-/// The app's resident shell: tray icon, global hotkey handling and window lifetimes.
-/// </summary>
 internal sealed class AppShell(
     Func<SettingsViewModel> createSettingsViewModel,
     SettingsStore settings,
@@ -37,7 +34,6 @@ internal sealed class AppShell(
         _tray = CreateTrayIcon();
         UpdateTrayToolTip(settings.Current);
 
-        // Pay the XAML-load and first-render cost now rather than on the first hotkey press.
         TranslatorWindow.Prewarm();
 
         var registered = hotkeys.Apply(settings.Current.Hotkey);
@@ -107,15 +103,12 @@ internal sealed class AppShell(
         _handlingHotkey = true;
         try
         {
-            // Pressing the hotkey again while the translator is focused toggles it off.
             if (_translatorWindow is { IsVisible: true, IsActive: true })
             {
                 _translatorWindow.Hide();
                 return;
             }
 
-            // Appear immediately, but without focus: the selection is copied with Ctrl+C,
-            // which must still reach the app the user selected text in.
             var window = TranslatorWindow;
             window.ShowInactive();
 

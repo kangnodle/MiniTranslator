@@ -5,7 +5,6 @@ using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Application.UseCases;
 
-/// <summary>Remembers the language pair the user picked in the translator window.</summary>
 public sealed class ChangeLanguagesUseCase(SettingsStore settings)
 {
     public Task<Result<AppSettings>> ExecuteAsync(LanguagePair languages, CancellationToken cancellationToken = default) =>

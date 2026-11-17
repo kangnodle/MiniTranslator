@@ -4,10 +4,6 @@ using MiniTranslator.Domain.Hotkeys;
 
 namespace MiniTranslator.Application.Hotkeys;
 
-/// <summary>
-/// Keeps track of which gesture is registered and restores the previous one when a change fails,
-/// so the user is never left without a working hotkey.
-/// </summary>
 public sealed class HotkeyManager(IGlobalHotkey hotkey) : IDisposable
 {
     private bool _suspended;
@@ -43,7 +39,6 @@ public sealed class HotkeyManager(IGlobalHotkey hotkey) : IDisposable
         return registered;
     }
 
-    /// <summary>Temporarily releases the hotkey, e.g. while the user records a new one.</summary>
     public void Suspend()
     {
         if (Active is null || _suspended)

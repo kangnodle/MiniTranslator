@@ -10,10 +10,6 @@ using WindowsDesktop = MiniTranslator.Adapters.Windows.ServiceCollectionExtensio
 
 namespace MiniTranslator.Architecture.Tests;
 
-/// <summary>
-/// Enforces the Clean Architecture dependency rule at the assembly level:
-/// dependencies point inward, the core stays free of frameworks and I/O, and adapters never know about each other.
-/// </summary>
 public class DependencyRuleTests
 {
     private const string Domain = "MiniTranslator.Domain";

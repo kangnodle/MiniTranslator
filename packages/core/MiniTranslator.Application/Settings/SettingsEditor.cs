@@ -8,7 +8,6 @@ namespace MiniTranslator.Application.Settings;
 public sealed record SettingsSaveResult(
     Result<AppSettings> Settings, Error? StartupRollbackError = null, Error? HotkeyRollbackError = null);
 
-/// <summary>One editing session owns settings persistence and desktop effects, including rollback and retry state.</summary>
 public sealed class SettingsEditor
 {
     private readonly SettingsStore _settings;
@@ -35,10 +34,6 @@ public sealed class SettingsEditor
     public void BeginHotkeyRecording() => _hotkeys.Suspend();
     public Result<Unit> EndHotkeyRecording() => _hotkeys.Resume();
 
-    /// <summary>
-    /// Codex sign-in, using the CLI path as typed in the draft. It takes effect immediately and is not part of
-    /// saving: cancelling the settings does not undo a sign-in or sign-out.
-    /// </summary>
     public Task<Result<CodexAccountState>> ReadCodexAccountAsync(string? executablePath, CancellationToken cancellationToken = default) =>
         _codexAccount.ReadAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
 

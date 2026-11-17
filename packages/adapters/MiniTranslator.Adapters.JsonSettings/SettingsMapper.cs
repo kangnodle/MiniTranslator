@@ -4,10 +4,6 @@ using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Adapters.JsonSettings;
 
-/// <summary>
-/// Pure translation between <see cref="SettingsDocument"/> and <see cref="AppSettings"/>.
-/// Any missing or invalid value falls back to its default, so a damaged file never blocks startup.
-/// </summary>
 internal static class SettingsMapper
 {
     public static SettingsDocument ToDocument(AppSettings settings) => new()

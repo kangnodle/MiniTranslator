@@ -46,7 +46,6 @@ public sealed partial class TranslatorViewModel : ObservableObject
         settings.Changed += OnSettingsChanged;
     }
 
-    /// <summary>Raised when the user asks for the settings window.</summary>
     public event EventHandler? SettingsRequested;
 
     public IReadOnlyList<Language> SourceLanguages => LanguageCatalog.SourceOptions;
@@ -55,7 +54,6 @@ public sealed partial class TranslatorViewModel : ObservableObject
 
     public string HotkeyText => _settings.Current.Hotkey.ToDisplayString();
 
-    /// <summary>Whether the view should hide itself when it loses focus.</summary>
     public bool HideOnDeactivate => _settings.Current.Behavior.HideOnDeactivate;
 
     public string CharacterCount => $"{SourceText.Length:N0} / {TranslationRequest.MaxLength:N0}";
@@ -84,7 +82,6 @@ public sealed partial class TranslatorViewModel : ObservableObject
     [ObservableProperty]
     private bool _isTranslating;
 
-    /// <summary>Called each time the window is shown. When <paramref name="autoTranslate"/> is true, non-empty <paramref name="text"/> is translated immediately.</summary>
     public void Prepare(string? text, bool autoTranslate = true)
     {
         SetError(null);
@@ -123,7 +120,6 @@ public sealed partial class TranslatorViewModel : ObservableObject
         }
         catch (OperationCanceledException) when (current.IsCancellationRequested)
         {
-            // Superseded by a newer request.
         }
         finally
         {

@@ -6,14 +6,6 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.CodexCli;
 
-/// <summary>
-/// Translates through one long-lived Codex app-server and one thread on it, because starting the CLI and
-/// starting a thread each cost seconds per request. Requests run one at a time. The session is replaced when it
-/// fails, when a request is cancelled mid-turn, and every <see cref="MaxTurnsPerSession"/> translations so the
-/// conversation its thread accumulates stays small.
-/// </summary>
-/// <param name="startProcess">Starts the app-server.</param>
-/// <param name="timeout">How long one translation may take, session start included.</param>
 internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeSpan timeout) : ITranslator, IDisposable
 {
     public const int MaxTurnsPerSession = 20;
@@ -36,7 +28,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
             var reusedSession = _session is not null && _turns < MaxTurnsPerSession;
             var result = await ExchangeAsync(request, deadline.Token);
 
-            // A session can die while idle; that says nothing about a fresh one, so try once more.
             if (result is null && reusedSession)
             {
                 result = await ExchangeAsync(request, deadline.Token);
@@ -50,7 +41,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         }
         catch (OperationCanceledException)
         {
-            // The turn was abandoned halfway, so the session's next output would belong to this request.
             EndSession();
             if (cancellationToken.IsCancellationRequested)
             {
@@ -65,10 +55,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         }
     }
 
-    /// <summary>
-    /// Ends the session once any running translation has finished, so the next one starts a process that sees
-    /// the current sign-in.
-    /// </summary>
     public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
         await _turn.WaitAsync(cancellationToken);
@@ -88,7 +74,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         _turn.Dispose();
     }
 
-    /// <returns>The turn's outcome, or <c>null</c> when the session ended without producing one.</returns>
     private async Task<Result<TranslationResult>?> ExchangeAsync(TranslationRequest request, CancellationToken cancellationToken)
     {
         if (_turns >= MaxTurnsPerSession)
@@ -111,7 +96,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         }
         catch (IOException)
         {
-            // The process closed its pipes; handled like any other exit below.
         }
 
         EndSession();
@@ -139,8 +123,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         return await TurnAsync(_session, _threadId!, request, cancellationToken);
     }
 
-    /// <summary>Handshake, sign-in check, and thread start on a fresh process.</summary>
-    /// <returns>The thread id or why there is none; <c>null</c> when the process ended first.</returns>
     private static async Task<Result<string>?> OpenThreadAsync(CodexConnection session, CancellationToken cancellationToken)
     {
         if (await session.HandshakeAsync(TranslationErrors.CodexFailed, cancellationToken) is not { } handshake)
@@ -153,7 +135,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
             return handshake.Error;
         }
 
-        // A signed-out server still starts threads, so this is the only place the missing sign-in shows up clearly.
         if (await session.CallAsync(CodexCliProtocol.ReadAccount, TranslationErrors.CodexFailed, cancellationToken) is not { } account)
         {
             return null;
@@ -184,7 +165,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         return CodexCliProtocol.ThreadId(thread.Value) is { } threadId ? threadId : TranslationErrors.CodexFailed(null);
     }
 
-    /// <returns>The translation or why the turn failed; <c>null</c> when the process ended first.</returns>
     private static async Task<Result<TranslationResult>?> TurnAsync(
         CodexConnection session,
         string threadId,
@@ -194,7 +174,6 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         var requestId = session.NextRequestId();
         await session.SendAsync(CodexCliProtocol.StartTurn(requestId, threadId, request), cancellationToken);
 
-        // Turns on this thread never overlap, so until the reply names the turn, anything on the thread is this turn's.
         string? turnId = null;
         var output = new StringBuilder();
 

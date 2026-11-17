@@ -1,15 +1,10 @@
 namespace MiniTranslator.Domain.Common;
 
-/// <summary>Represents "no value" for operations that only succeed or fail.</summary>
 public readonly record struct Unit
 {
     public static Unit Value => default;
 }
 
-/// <summary>
-/// Either a successful value or an <see cref="Common.Error"/>.
-/// Enables railway-style composition of pure functions via <see cref="Map{TOut}"/> and <see cref="Bind{TOut}"/>.
-/// </summary>
 public sealed class Result<T>
 {
     private readonly T? _value;
@@ -60,7 +55,6 @@ public sealed class Result<T>
     public override string ToString() => IsSuccess ? $"Success({Value})" : $"Failure({Error})";
 }
 
-/// <summary>Factory helpers for <see cref="Result{T}"/>.</summary>
 public static class Result
 {
     public static Result<Unit> Success() => Result<Unit>.Success(Unit.Value);

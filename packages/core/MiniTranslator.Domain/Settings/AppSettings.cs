@@ -4,10 +4,6 @@ using MiniTranslator.Domain.Languages;
 
 namespace MiniTranslator.Domain.Settings;
 
-/// <summary>How the app reacts when the global hotkey is pressed.</summary>
-/// <param name="CaptureSelectionOnHotkey">Copy the text selected in the foreground app.</param>
-/// <param name="HideOnDeactivate">Hide the translator window when it loses focus.</param>
-/// <param name="AutoTranslateOnCapture">Automatically send captured text to translation without user confirmation.</param>
 public sealed record BehaviorSettings(
     bool CaptureSelectionOnHotkey,
     bool HideOnDeactivate,
@@ -19,9 +15,6 @@ public sealed record BehaviorSettings(
         AutoTranslateOnCapture: false);
 }
 
-/// <summary>
-/// Immutable application settings and pure rules for applying edits.
-/// </summary>
 public sealed record AppSettings(
     HotkeyGesture Hotkey,
     LanguagePair Languages,
@@ -31,10 +24,8 @@ public sealed record AppSettings(
     public UiLanguage UiLanguage { get; init; } = UiLanguage.Korean;
     public TranslationEngine Engine { get; init; } = TranslationEngine.Google;
 
-    /// <summary>Where the Codex CLI is when it is not on PATH; empty to look on PATH only.</summary>
     public string CodexExecutablePath { get; init; } = string.Empty;
 
-    /// <summary>Only edited fields win; concurrent changes and the immediately saved theme are preserved.</summary>
     public Result<AppSettings> MergeDraft(AppSettings draft, AppSettings original)
     {
         if (!Enum.IsDefined(draft.UiLanguage))
@@ -65,13 +56,11 @@ public sealed record AppSettings(
         };
     }
 
-    /// <summary>A path as typed or pasted: Explorer's "Copy as path" wraps it in quotes.</summary>
     public static string NormalizePath(string? path) => (path ?? string.Empty).Trim().Trim('"').Trim();
 
     public Result<AppSettings> WithTheme(AppTheme theme) =>
         Enum.IsDefined(theme) ? this with { Theme = theme } : SettingsErrors.InvalidTheme;
 
-    /// <summary>Ctrl + Space, English → Korean.</summary>
     public static AppSettings Default { get; } =
         new(HotkeyGesture.Default, LanguagePair.Default, BehaviorSettings.Default);
 }

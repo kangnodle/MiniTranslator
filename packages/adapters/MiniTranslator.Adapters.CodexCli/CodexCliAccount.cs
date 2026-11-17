@@ -5,15 +5,6 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.CodexCli;
 
-/// <summary>
-/// Signs the Codex CLI in and out by asking a short-lived app-server to do it, one process per operation.
-/// The CLI runs the browser sign-in and stores the credentials; this class never sees a token.
-/// </summary>
-/// <param name="startProcess">Starts the app-server, given the CLI path typed in the settings.</param>
-/// <param name="openBrowser">Shows the sign-in page to the user.</param>
-/// <param name="signInChanged">Runs after a sign-in or sign-out, so a running translation session is not left on the old state.</param>
-/// <param name="callTimeout">How long reading the account or signing out may take.</param>
-/// <param name="signInTimeout">How long the user has to finish signing in in the browser.</param>
 internal sealed class CodexCliAccount(
     Func<string, ICodexProcess> startProcess,
     Action<Uri> openBrowser,
@@ -30,7 +21,6 @@ internal sealed class CodexCliAccount(
     public Task<Result<CodexAccountState>> SignOutAsync(string executablePath, CancellationToken cancellationToken = default) =>
         RunAsync(executablePath, callTimeout, SignOutAsync, cancellationToken);
 
-    /// <summary>Runs one operation on a fresh, handshaken process and turns every way it can break into an error value.</summary>
     private async Task<Result<CodexAccountState>> RunAsync(
         string executablePath,
         TimeSpan timeout,
@@ -62,7 +52,6 @@ internal sealed class CodexCliAccount(
         }
         catch (IOException)
         {
-            // The process closed its pipes before answering.
             return TranslationErrors.CodexAccountFailed(null);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -103,7 +92,6 @@ internal sealed class CodexCliAccount(
             return started.Error;
         }
 
-        // The page comes from the CLI; only OpenAI's own sign-in page is ever handed to the browser.
         if (CodexCliProtocol.Login(started.Value) is not { } login)
         {
             return TranslationErrors.CodexSignInFailed(null);

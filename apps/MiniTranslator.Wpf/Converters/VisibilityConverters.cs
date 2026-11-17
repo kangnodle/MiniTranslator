@@ -4,7 +4,6 @@ using System.Windows.Data;
 
 namespace MiniTranslator.Wpf.Converters;
 
-/// <summary>Visible when the value is non-null (and, for strings, not blank). Set <see cref="Invert"/> for the opposite.</summary>
 public sealed class HasValueToVisibilityConverter : IValueConverter
 {
     public bool Invert { get; set; }

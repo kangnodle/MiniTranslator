@@ -318,7 +318,6 @@ public class WindowUxTests
         window.Width = width;
         window.Height = height;
         var content = (FrameworkElement)window.Content;
-        // Leave room for the native window frame while measuring the real XAML.
         var size = new Size(width - 16, height - 40);
         content.Measure(size);
         content.Arrange(new Rect(size));

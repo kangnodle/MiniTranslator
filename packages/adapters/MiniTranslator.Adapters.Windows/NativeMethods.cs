@@ -10,7 +10,6 @@ internal static partial class NativeMethods
     public const uint INPUT_KEYBOARD = 1;
     public const uint KEYEVENTF_KEYUP = 0x0002;
 
-    /// <summary>Parent handle for message-only windows.</summary>
     public static readonly nint HWND_MESSAGE = -3;
 
     [LibraryImport("user32.dll", SetLastError = true)]
@@ -83,7 +82,6 @@ internal static partial class NativeMethods
     [StructLayout(LayoutKind.Explicit)]
     public struct InputUnion
     {
-        // MOUSEINPUT is the largest member and defines the union's size.
         [FieldOffset(0)] public MOUSEINPUT mi;
         [FieldOffset(0)] public KEYBDINPUT ki;
     }

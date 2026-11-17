@@ -10,7 +10,6 @@ public class CodexCliAccountTests
 
     private static readonly CodexAccountState SignedIn = new(true, Sessions.Email);
 
-    /// <summary>The account under test with everything it touches recorded.</summary>
     private sealed class Fixture
     {
         public Fixture(Sessions sessions, TimeSpan? signInTimeout = null, Action<Uri>? openBrowser = null)

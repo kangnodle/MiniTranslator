@@ -5,7 +5,6 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.CodexCli.Tests;
 
-/// <remarks>Server lines are shaped like those recorded from codex-cli 0.169, with ids shortened.</remarks>
 public class CodexCliProtocolTests
 {
     private static TranslationRequest Request(string text = "Hello", string source = "en", string target = "ko") =>
@@ -17,7 +16,6 @@ public class CodexCliProtocolTests
         return document.RootElement.Clone();
     }
 
-    /// <summary>The parameters of a request line, after checking its id and method.</summary>
     private static JsonElement Parameters(string line, long id, string method)
     {
         var root = Json(line);

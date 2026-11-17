@@ -5,11 +5,6 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.ClaudeCli;
 
-/// <summary>
-/// Translates through one long-lived Claude Code CLI session, because starting the CLI costs seconds per request.
-/// Requests run one at a time. The session is replaced when it fails, when a request is cancelled mid-turn,
-/// and every <see cref="MaxTurnsPerSession"/> translations so the conversation it accumulates stays small.
-/// </summary>
 internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, TimeSpan timeout) : ITranslator, IDisposable
 {
     public const int MaxTurnsPerSession = 20;
@@ -31,7 +26,6 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
             var reusedSession = _session is not null && _turns < MaxTurnsPerSession;
             var result = await ExchangeAsync(request, deadline.Token);
 
-            // A session can die while idle; that says nothing about a fresh one, so try once more.
             if (result is null && reusedSession)
             {
                 result = await ExchangeAsync(request, deadline.Token);
@@ -45,7 +39,6 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
         }
         catch (OperationCanceledException)
         {
-            // The turn was abandoned halfway, so the session's next output would belong to this request.
             EndSession();
             if (cancellationToken.IsCancellationRequested)
             {
@@ -66,7 +59,6 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
         _turn.Dispose();
     }
 
-    /// <returns>The turn's outcome, or <c>null</c> when the session ended without producing one.</returns>
     private async Task<Result<TranslationResult>?> ExchangeAsync(TranslationRequest request, CancellationToken cancellationToken)
     {
         if (_turns >= MaxTurnsPerSession)
@@ -97,7 +89,6 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
         }
         catch (IOException)
         {
-            // The process closed its pipes; handled like any other exit below.
         }
 
         EndSession();

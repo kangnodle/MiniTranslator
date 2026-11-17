@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Adapter: implements ITranslator over HTTP (Google Translate public endpoint).
-    GoogleTranslateProtocol is the pure request/response mapping; GoogleTranslator is the thin I/O shell.
-  -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
     <RootNamespace>MiniTranslator.Adapters.GoogleTranslate</RootNamespace>

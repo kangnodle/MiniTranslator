@@ -1,9 +1,5 @@
 namespace MiniTranslator.Adapters.Windows;
 
-/// <summary>
-/// Identifies terminal and console processes where sending Ctrl+C via SendInput
-/// would trigger SIGINT / Ctrl+C interrupts instead of copying text.
-/// </summary>
 internal static class TerminalProcesses
 {
     private static readonly HashSet<string> Names = new(StringComparer.OrdinalIgnoreCase)

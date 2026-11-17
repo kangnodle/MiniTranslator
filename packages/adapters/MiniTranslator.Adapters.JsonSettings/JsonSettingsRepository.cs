@@ -6,14 +6,12 @@ using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Adapters.JsonSettings;
 
-/// <summary>Stores settings as JSON in <c>%APPDATA%\MiniTranslator\settings.json</c>.</summary>
 public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
-        // Keep "Ctrl+Alt+T" readable instead of "Ctrl+Alt+T"; the file is local and never embedded in HTML.
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
@@ -50,7 +48,6 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
                 await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken);
             }
 
-            // Write-then-rename so a crash mid-write never leaves a truncated settings file.
             File.Move(tempFile, paths.SettingsFile, overwrite: true);
             return Result.Success();
         }

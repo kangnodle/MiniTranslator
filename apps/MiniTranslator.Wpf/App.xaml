@@ -4,11 +4,6 @@
              xmlns:converters="clr-namespace:MiniTranslator.Wpf.Converters"
              ThemeMode="System"
              ShutdownMode="OnExplicitShutdown">
-    <!--
-        ThemeMode="System" turns on WPF's built-in Fluent theme (Microsoft Fluent 2 tokens:
-        typography ramp, Card/Accent/SystemFill brushes, Mica) and follows the Windows light/dark setting.
-        Styles below only reference theme resources dynamically so they track theme switches.
-    -->
     <Application.Resources>
         <ResourceDictionary>
             <SolidColorBrush x:Key="AppSurfaceBrush" Color="Transparent" />
@@ -54,7 +49,6 @@
                 <Setter Property="Padding" Value="8" />
             </Style>
 
-            <!-- Fluent 2 "card" surface: layered fill, 1px stroke, 8px corner (overlay radius). -->
             <Style x:Key="CardStyle" TargetType="Border">
                 <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
@@ -83,7 +77,6 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             </Style>
 
-            <!-- Fluent InfoBar (error severity). -->
             <Style x:Key="ErrorInfoBarStyle" TargetType="Border">
                 <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />

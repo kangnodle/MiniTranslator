@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Domain (functional core): immutable values and business rules only.
-    MUST NOT reference any other project or package (no I/O, no UI, no frameworks).
-    Enforced by tests/MiniTranslator.Architecture.Tests.
-  -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
     <RootNamespace>MiniTranslator.Domain</RootNamespace>

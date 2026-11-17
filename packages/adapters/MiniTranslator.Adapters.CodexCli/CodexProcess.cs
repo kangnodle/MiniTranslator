@@ -4,17 +4,12 @@ using System.Text;
 
 namespace MiniTranslator.Adapters.CodexCli;
 
-/// <summary>Thin shell over the <c>codex app-server</c> child process. It closes with this app because its stdin closes.</summary>
 internal sealed class CodexProcess : ICodexProcess
 {
     private readonly Process _process;
 
     private CodexProcess(Process process) => _process = process;
 
-    /// <summary>Starts the first of <paramref name="executables"/> that can be started.</summary>
-    /// <param name="executables">Candidates for the Codex CLI: commands found on PATH, or full paths.</param>
-    /// <param name="home">The profile folder holding the CLI's sign-in for this app; created when missing.</param>
-    /// <exception cref="Win32Exception">None of the candidates is installed or can be started.</exception>
     public static CodexProcess Start(IReadOnlyList<string> executables, string home)
     {
         Win32Exception? failure = null;
@@ -48,7 +43,6 @@ internal sealed class CodexProcess : ICodexProcess
             StandardInputEncoding = utf8,
             StandardOutputEncoding = utf8,
             StandardErrorEncoding = utf8,
-            // Away from any project folder, so no repository instructions are picked up.
             WorkingDirectory = Path.GetTempPath(),
         };
 
@@ -66,15 +60,12 @@ internal sealed class CodexProcess : ICodexProcess
 
         var process = Process.Start(startInfo) ?? throw new Win32Exception("The Codex CLI did not start.");
 
-        // Drain stderr so the CLI can never block on a full pipe.
         process.ErrorDataReceived += static (_, _) => { };
         process.BeginErrorReadLine();
 
         return new CodexProcess(process);
     }
 
-    /// <summary>Opens <paramref name="page"/> in the user's default browser.</summary>
-    /// <exception cref="Win32Exception">No program is registered to open it.</exception>
     public static void OpenBrowser(Uri page) =>
         Process.Start(new ProcessStartInfo(page.AbsoluteUri) { UseShellExecute = true })?.Dispose();
 
@@ -86,7 +77,6 @@ internal sealed class CodexProcess : ICodexProcess
 
     public async Task<string?> ReadLineAsync(CancellationToken cancellationToken)
     {
-        // A pipe read cannot be cancelled reliably; ending the process is what unblocks it.
         await using var kill = cancellationToken.Register(Kill);
         var line = await _process.StandardOutput.ReadLineAsync(CancellationToken.None);
         cancellationToken.ThrowIfCancellationRequested();
@@ -110,7 +100,6 @@ internal sealed class CodexProcess : ICodexProcess
         }
         catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException)
         {
-            // Already gone, or going: there is nothing left to stop.
         }
     }
 }

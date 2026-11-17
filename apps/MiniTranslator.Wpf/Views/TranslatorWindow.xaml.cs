@@ -27,13 +27,8 @@ public partial class TranslatorWindow : Window
         };
     }
 
-    /// <summary>Set before application shutdown so <see cref="OnClosing"/> lets the window close for real.</summary>
     public bool AllowClose { get; set; }
 
-    /// <summary>
-    /// Builds the window's handle and visual tree and renders it once off-screen, so the first hotkey press
-    /// only has to make an already-composed window visible.
-    /// </summary>
     public void Prewarm()
     {
         if (IsVisible)
@@ -47,7 +42,6 @@ public partial class TranslatorWindow : Window
         Show();
         _prewarming = true;
 
-        // ApplicationIdle runs after the first render pass has completed.
         Dispatcher.InvokeAsync(() =>
         {
             if (_prewarming)
@@ -65,14 +59,12 @@ public partial class TranslatorWindow : Window
         FocusInput();
     }
 
-    /// <summary>Puts the window on screen without taking focus, so the foreground app keeps receiving input.</summary>
     public void ShowInactive()
     {
         if (!IsVisible || _prewarming)
         {
             _prewarming = false;
 
-            // Center horizontally, slightly above the middle of the work area (launcher-style).
             var area = SystemParameters.WorkArea;
             Left = area.Left + (area.Width - Width) / 2;
             Top = area.Top + Math.Max(0, (area.Height - Height) / 3);
@@ -94,7 +86,6 @@ public partial class TranslatorWindow : Window
         SourceTextBox.SelectAll();
     }
 
-    // The clear button disables once the text is gone, so hand focus back to the input for the next entry.
     private void OnClearClick(object sender, RoutedEventArgs e) => SourceTextBox.Focus();
 
     private void OnTranslationPanelsSizeChanged(object sender, SizeChangedEventArgs e)
@@ -122,7 +113,6 @@ public partial class TranslatorWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        // The window lives for the whole session; closing it just hides it.
         if (!AllowClose)
         {
             e.Cancel = true;

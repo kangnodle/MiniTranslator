@@ -6,10 +6,8 @@ namespace MiniTranslator.Adapters.GoogleTranslate;
 
 public static class ServiceCollectionExtensions
 {
-    /// <summary>Provides the <see cref="ITranslator"/> keyed <see cref="TranslationEngine.Google"/>, backed by Google Translate's public endpoint.</summary>
     public static IServiceCollection AddGoogleTranslator(this IServiceCollection services)
     {
-        // The HttpClient is owned by this adapter, so no other package can pick it up by accident.
         services.AddKeyedSingleton<ITranslator>(TranslationEngine.Google, (_, _) =>
         {
             var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };

@@ -183,7 +183,6 @@ public class ClaudeCliTranslatorTests
         }
     }
 
-    /// <summary>Scripted CLI: each written message yields output lines, or <c>null</c> to exit.</summary>
     private sealed class FakeProcess(Func<string, string[]?> respond) : IClaudeProcess
     {
         private readonly Queue<string> _output = new();

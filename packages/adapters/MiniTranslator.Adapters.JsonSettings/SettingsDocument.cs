@@ -1,6 +1,5 @@
 namespace MiniTranslator.Adapters.JsonSettings;
 
-/// <summary>On-disk JSON shape of the settings. Kept separate from the domain model so either can evolve.</summary>
 internal sealed class SettingsDocument
 {
     public int Version { get; set; } = 1;

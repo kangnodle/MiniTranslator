@@ -6,7 +6,6 @@ if ($env:OS -ne 'Windows_NT') {
 
 Push-Location -LiteralPath (Split-Path -Parent $PSScriptRoot)
 try {
-    # Resolve global.json from the repository before running any build steps.
     $sdkVersion = & dotnet --version
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     if ($sdkVersion -notmatch '^11\.') {

@@ -5,13 +5,9 @@ using MiniTranslator.Domain.Hotkeys;
 
 namespace MiniTranslator.Adapters.Windows;
 
-/// <summary>
-/// System-wide hotkey via <c>RegisterHotKey</c>, delivered to a private message-only window
-/// so it does not depend on any visible UI window. Must be used from the UI (dispatcher) thread.
-/// </summary>
 internal sealed class Win32GlobalHotkey : IGlobalHotkey
 {
-    private const int HotkeyId = 0x4D54;      // "MT"
+    private const int HotkeyId = 0x4D54;
     private const int AliasHotkeyId = 0x4D55;
 
     private HwndSource? _window;
@@ -33,7 +29,6 @@ internal sealed class Win32GlobalHotkey : IGlobalHotkey
 
         _registered = true;
 
-        // Best effort: the gesture already works wherever the layout reports the key unchanged.
         if (KeyboardLayoutAliases.For(gesture) is { } aliasKey)
         {
             _aliasRegistered = NativeMethods.RegisterHotKey(window.Handle, AliasHotkeyId, modifiers, (uint)aliasKey);

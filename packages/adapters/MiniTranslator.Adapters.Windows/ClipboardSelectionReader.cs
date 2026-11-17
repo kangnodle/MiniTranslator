@@ -3,16 +3,11 @@ using MiniTranslator.Application.Abstractions;
 
 namespace MiniTranslator.Adapters.Windows;
 
-/// <summary>
-/// Reads the foreground app's selection by sending Ctrl+C and watching the clipboard,
-/// then restores the user's previous clipboard text. Must run on the UI (STA) thread.
-/// Which keys to wait for and inject comes from <see cref="CopyShortcut"/>; this class only performs the I/O.
-/// </summary>
 internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSelectionReader
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(10);
-    private const int ModifierReleasePolls = 50; // ~500 ms
-    private const int ClipboardPolls = 20;       // ~200 ms
+    private const int ModifierReleasePolls = 50;
+    private const int ClipboardPolls = 20;
 
     public async Task<string?> ReadSelectionAsync(CancellationToken cancellationToken = default)
     {
@@ -23,7 +18,6 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
             return null;
         }
 
-        // The user may still be holding the hotkey's modifiers; Ctrl+C would become e.g. Ctrl+Alt+C.
         for (var i = 0; i < ModifierReleasePolls && AnyConflictingModifierDown(); i++)
         {
             await Task.Delay(PollInterval, cancellationToken);
@@ -45,12 +39,12 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
             var sequence = NativeMethods.GetClipboardSequenceNumber();
             if (sequence != sequenceBefore)
             {
-                await Task.Delay(PollInterval, cancellationToken); // let the source app finish writing all formats
+                await Task.Delay(PollInterval, cancellationToken);
                 return clipboard.TryReadSelection(sourceWindow, sourceProcessId, sequence, backup);
             }
         }
 
-        return null; // Clipboard unchanged: nothing was selected.
+        return null;
     }
 
     private static bool IsTerminalForegroundProcess(uint processId)

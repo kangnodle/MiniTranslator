@@ -55,7 +55,6 @@ public sealed class FakeTranslator : ITranslator
 {
     public List<TranslationRequest> Calls { get; } = [];
 
-    /// <summary>Source language reported back when the request uses auto-detect.</summary>
     public string? DetectedLanguageCode { get; set; }
 
     public Task<Result<TranslationResult>> TranslateAsync(

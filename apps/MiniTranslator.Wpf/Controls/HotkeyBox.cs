@@ -6,11 +6,6 @@ using MiniTranslator.Presentation;
 
 namespace MiniTranslator.Wpf.Controls;
 
-/// <summary>
-/// A read-only text box that records a key combination.
-/// It only reports what was pressed (<see cref="RecordCommand"/> with a <see cref="KeyChord"/>);
-/// deciding whether that is a valid hotkey is the domain's job.
-/// </summary>
 public sealed class HotkeyBox : TextBox
 {
     public static readonly DependencyProperty GestureProperty = DependencyProperty.Register(
@@ -22,7 +17,6 @@ public sealed class HotkeyBox : TextBox
 
     public HotkeyBox()
     {
-        // Implicit styles match the exact type, so borrow the theme's TextBox style explicitly.
         SetResourceReference(StyleProperty, typeof(TextBox));
 
         IsReadOnly = true;
@@ -55,7 +49,6 @@ public sealed class HotkeyBox : TextBox
         };
         var modifiers = CurrentModifiers();
 
-        // Keep plain Tab / Shift+Tab for keyboard navigation.
         if (key == Key.Tab && (modifiers & ~HotkeyModifiers.Shift) == HotkeyModifiers.None)
         {
             base.OnPreviewKeyDown(e);

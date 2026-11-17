@@ -4,25 +4,16 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.GoogleTranslate;
 
-/// <summary>
-/// Pure request/response mapping for Google Translate's public web endpoint (<c>translate_a/single</c>, <c>client=gtx</c>).
-/// It needs no API key or sign-in. The text is URL-encoded in the GET query.
-/// </summary>
 internal static class GoogleTranslateProtocol
 {
     public const string Endpoint = "https://translate.googleapis.com/translate_a/single";
 
-    /// <remarks><c>dt=t</c> asks for the translated sentences only. <c>sl=auto</c> turns on language detection.</remarks>
     public static string BuildRequestUri(TranslationRequest request) =>
         $"{Endpoint}?client=gtx&dt=t" +
         $"&sl={Uri.EscapeDataString(request.Languages.Source.Code)}" +
         $"&tl={Uri.EscapeDataString(request.Languages.Target.Code)}" +
         $"&q={Uri.EscapeDataString(request.Text)}";
 
-    /// <summary>
-    /// Success responses are nested arrays: <c>[[["번역", "source", …], …], null, "en", …]</c> —
-    /// element 0 holds one entry per sentence, element 2 the detected source language.
-    /// </summary>
     public static Result<TranslationResult> ParseResponse(int statusCode, string body, TranslationRequest request)
     {
         if (statusCode == 429)

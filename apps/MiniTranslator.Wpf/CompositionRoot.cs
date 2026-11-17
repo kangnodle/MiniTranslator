@@ -15,10 +15,6 @@ using MiniTranslator.Wpf.Services;
 
 namespace MiniTranslator.Wpf;
 
-/// <summary>
-/// The single place that knows every package. Core and Presentation stay free of any DI container;
-/// adapters expose one <c>AddXxx</c> extension each because their implementations are internal.
-/// </summary>
 internal static class CompositionRoot
 {
     public static ServiceProvider Build() =>
@@ -38,7 +34,6 @@ internal static class CompositionRoot
         services.AddSingleton<SettingsStore>();
         services.AddSingleton<HotkeyManager>();
 
-        // Each adapter registers its translator under its engine; the app talks to whichever the settings select.
         services.AddSingleton<ITranslator>(sp => new SelectedEngineTranslator(
             sp.GetRequiredService<SettingsStore>(),
             engine => sp.GetRequiredKeyedService<ITranslator>(engine)));
@@ -56,7 +51,6 @@ internal static class CompositionRoot
         services.AddSingleton<TranslatorViewModel>();
         services.AddTransient<SettingsViewModel>();
 
-        // Each settings window gets a fresh draft; the shell asks for one through this factory instead of the container.
         services.AddSingleton<Func<SettingsViewModel>>(sp => sp.GetRequiredService<SettingsViewModel>);
 
         return services;

@@ -10,7 +10,6 @@ using MiniTranslator.Presentation.Localization;
 
 namespace MiniTranslator.Presentation.ViewModels;
 
-/// <summary>Edits a settings draft; the theme is applied and saved immediately.</summary>
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly SettingsEditor _editor;
@@ -83,8 +82,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    // ── Hotkey ────────────────────────────────────────────────────────────
-
     [ObservableProperty]
     private HotkeyGesture _hotkey;
 
@@ -113,7 +110,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         HotkeyError = null;
     }
 
-    /// <summary>The live hotkey would swallow the keys the user is trying to record, so release it meanwhile.</summary>
     public void BeginHotkeyRecording() => _editor.BeginHotkeyRecording();
 
     public bool EndHotkeyRecording()
@@ -126,8 +122,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         return resumed.IsSuccess;
     }
-
-    // ── Languages ─────────────────────────────────────────────────────────
 
     [ObservableProperty]
     private Language _sourceLanguage;
@@ -181,8 +175,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    // ── Behavior ──────────────────────────────────────────────────────────
-
     [ObservableProperty]
     private bool _captureSelectionOnHotkey;
 
@@ -201,9 +193,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _codexExecutablePath;
 
-    // ── Codex sign-in ─────────────────────────────────────────────────────
-
-    /// <summary>Who is signed in, or what is being waited for.</summary>
     [ObservableProperty]
     private string? _codexAccountText;
 
@@ -214,7 +203,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanOfferCodexSignIn))]
     private bool _isCodexSignedIn;
 
-    /// <summary>The browser step is open; it can be cancelled.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanOfferCodexSignIn))]
     private bool _isCodexSigningIn;
@@ -223,7 +211,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(RefreshCodexAccountCommand), nameof(SignInToCodexCommand), nameof(SignOutOfCodexCommand))]
     private bool _isCodexBusy;
 
-    /// <summary>Whether to show the sign-in button rather than sign-out or cancel.</summary>
     public bool CanOfferCodexSignIn => !IsCodexSignedIn && !IsCodexSigningIn;
 
     private bool IsCodexIdle => !IsCodexBusy;
@@ -240,7 +227,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private Task RefreshCodexAccountAsync() =>
         RunCodexAsync("CodexAccountChecking", token => _editor.ReadCodexAccountAsync(CodexExecutablePath, token), CancellationToken.None);
 
-    /// <summary>Signing in happens at once, like the theme: it is not undone by cancelling the settings.</summary>
     [RelayCommand(CanExecute = nameof(IsCodexIdle), IncludeCancelCommand = true)]
     private async Task SignInToCodexAsync(CancellationToken cancellationToken)
     {
@@ -272,7 +258,6 @@ public sealed partial class SettingsViewModel : ObservableObject
             var state = await operation(cancellationToken);
             if (state.IsFailure)
             {
-                // What the CLI holds is unknown now, so the last known sign-in state stays as it was.
                 CodexAccountText = null;
                 CodexAccountError = LocalizeError(state.Error);
                 return;
@@ -283,7 +268,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            // The user abandoned the browser step; nothing changed.
             CodexAccountText = DescribeCodexAccount(CodexAccountState.SignedOut);
         }
         finally
@@ -310,8 +294,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string? _startupError;
 
     public bool CanConfigureStartup { get; }
-
-    // ── Save / cancel ─────────────────────────────────────────────────────
 
     [ObservableProperty]
     private string? _saveError;
@@ -348,7 +330,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Stops waiting for the browser when the settings screen goes away.</summary>
     public void AbandonCodexSignIn() => SignInToCodexCancelCommand.Execute(null);
 
     private string LocalizeError(Error error) => UiText.Error(error, _editor.Current.UiLanguage);

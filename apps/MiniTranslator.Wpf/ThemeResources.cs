@@ -12,7 +12,6 @@ internal static class ThemeResources
 
     public static ResourceDictionary? Create(AppTheme theme)
     {
-        // VS Code palettes adapted for readable WPF controls, including disabled and error states.
         var palette = theme switch
         {
             AppTheme.TomorrowNightBlue => new Palette("#002451", "#001C40", "#001733", "#00346E", "#003F8E", "#FFFFFF", "#BBDAFF", "#7086A5", "#404F7D", "#BBDAFF", "#002451", "#FF9DA4", "#40243E"),

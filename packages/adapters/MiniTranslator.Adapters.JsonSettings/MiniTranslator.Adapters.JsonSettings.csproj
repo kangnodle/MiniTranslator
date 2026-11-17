@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Adapter: implements ISettingsRepository as a JSON file.
-    SettingsMapper is the pure document/domain mapping; JsonSettingsRepository is the thin file-system shell.
-  -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
     <RootNamespace>MiniTranslator.Adapters.JsonSettings</RootNamespace>

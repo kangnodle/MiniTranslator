@@ -3,7 +3,6 @@ using MiniTranslator.Domain.Common;
 
 namespace MiniTranslator.Testing;
 
-/// <summary>A Codex sign-in that lives in memory. Sign-in can be held open to stand in for the browser step.</summary>
 public sealed class FakeCodexAccount : ICodexAccount
 {
     public const string Email = "user@example.com";
@@ -12,10 +11,8 @@ public sealed class FakeCodexAccount : ICodexAccount
 
     public Error? FailWith { get; set; }
 
-    /// <summary>When set, sign-in waits for it, as the real one waits for the browser.</summary>
     public TaskCompletionSource? Browser { get; set; }
 
-    /// <summary>Every request as <c>operation:executablePath</c>, in order.</summary>
     public List<string> Calls { get; } = [];
 
     public Task<Result<CodexAccountState>> ReadAsync(string executablePath, CancellationToken cancellationToken = default)

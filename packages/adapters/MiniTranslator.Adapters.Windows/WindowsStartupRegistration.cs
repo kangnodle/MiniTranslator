@@ -26,7 +26,6 @@ internal sealed class WindowsStartupRegistration : IStartupRegistration
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(_runKeyPath);
-            // shortcut: Windows can separately block startup apps; revisit if managing that approval becomes required.
             return key?.GetValue(ValueName) is not null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)

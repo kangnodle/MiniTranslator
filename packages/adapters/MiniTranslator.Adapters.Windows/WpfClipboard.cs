@@ -5,7 +5,6 @@ using MiniTranslator.Domain.Common;
 
 namespace MiniTranslator.Adapters.Windows;
 
-/// <summary>System clipboard access. The clipboard can be briefly locked by other apps, hence the retries.</summary>
 internal sealed class WpfClipboard : IClipboard, IDisposable
 {
     private const uint UnicodeText = 13;
@@ -33,7 +32,6 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         }
     }
 
-    /// <returns>The clipboard text, or <c>null</c> when it holds no text or stays locked.</returns>
     public string? TryGetText()
     {
         for (var attempt = 1; attempt <= Attempts; attempt++)
@@ -124,7 +122,6 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
                 return null;
             }
 
-            // Keep validation, reading and restoration under one lock so another app's copy cannot be overwritten.
             if (backup.Text is not null)
             {
                 RestoreText(backup.Text, selected);
@@ -215,7 +212,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
     internal static nint AllocateText(string text)
     {
         var characters = (text + '\0').ToCharArray();
-        var memory = NativeMethods.GlobalAlloc(0x0002, (nuint)characters.Length * sizeof(char)); // GMEM_MOVEABLE
+        var memory = NativeMethods.GlobalAlloc(0x0002, (nuint)characters.Length * sizeof(char));
         if (memory == 0)
         {
             return 0;
@@ -248,7 +245,6 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         {
             previousMemory = AllocateText(previousText);
             selectedMemory = AllocateText(selected);
-            // Allocate both buffers before clearing; preserve the selection if restoring fails.
             if (previousMemory == 0 || selectedMemory == 0 || !NativeMethods.EmptyClipboard())
             {
                 return;
@@ -256,7 +252,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
 
             if (NativeMethods.SetClipboardData(UnicodeText, previousMemory) != 0)
             {
-                previousMemory = 0; // Windows owns the buffer after a successful write.
+                previousMemory = 0;
             }
             else if (NativeMethods.SetClipboardData(UnicodeText, selectedMemory) != 0)
             {

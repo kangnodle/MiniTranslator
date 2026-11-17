@@ -21,7 +21,6 @@ public class ClipboardCaptureTests
     }
 }
 
-/// <summary>Only the pure policies are tested here; the Win32/clipboard shells need a real desktop session.</summary>
 public class CopyShortcutTests
 {
     [Fact]

@@ -2,10 +2,6 @@ using MiniTranslator.Domain.Common;
 
 namespace MiniTranslator.Domain.Hotkeys;
 
-/// <summary>
-/// An always-valid global hotkey (modifiers + one main key).
-/// Instances can only be created through <see cref="Create"/> or <see cref="Parse"/>.
-/// </summary>
 public sealed record HotkeyGesture
 {
     private const HotkeyModifiers AllModifiers =
@@ -21,7 +17,6 @@ public sealed record HotkeyGesture
 
     public int VirtualKey { get; }
 
-    /// <summary>Default hotkey: Ctrl + Space.</summary>
     public static HotkeyGesture Default { get; } = new(HotkeyModifiers.Control, VirtualKeys.Space);
 
     public static Result<HotkeyGesture> Create(HotkeyModifiers modifiers, int virtualKey)
@@ -38,7 +33,6 @@ public sealed record HotkeyGesture
             return HotkeyErrors.ModifierRequired;
         }
 
-        // Shift + key would hijack normal typing (e.g. upper-case letters).
         if (modifiers == HotkeyModifiers.Shift)
         {
             return HotkeyErrors.ShiftOnly;
@@ -52,7 +46,6 @@ public sealed record HotkeyGesture
         return new HotkeyGesture(modifiers, virtualKey);
     }
 
-    /// <summary>Parses the canonical text form produced by <see cref="ToString"/>, e.g. <c>"Ctrl+Shift+T"</c>.</summary>
     public static Result<HotkeyGesture> Parse(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -82,10 +75,8 @@ public sealed record HotkeyGesture
         return key is null ? HotkeyErrors.Unparsable(text) : Create(modifiers, key.Value);
     }
 
-    /// <summary>Human-friendly form, e.g. <c>"Ctrl + Space"</c>.</summary>
     public string ToDisplayString() => string.Join(" + ", Parts());
 
-    /// <summary>Canonical, parseable form, e.g. <c>"Ctrl+Space"</c>.</summary>
     public override string ToString() => string.Join("+", Parts());
 
     private IEnumerable<string> Parts() => [.. Modifiers.Names(), VirtualKeys.NameOf(VirtualKey)];

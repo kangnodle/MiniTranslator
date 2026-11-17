@@ -1,5 +1,4 @@
 <Project>
-  <!-- Central package management: every NuGet version in the workspace is pinned here, once. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>

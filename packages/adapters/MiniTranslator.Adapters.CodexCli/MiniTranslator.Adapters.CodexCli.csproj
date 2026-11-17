@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Adapter: implements ITranslator through the locally installed Codex CLI, which owns sign-in and credentials.
-    CodexCliProtocol is the pure argument/request/message mapping for `codex app-server` (JSON-RPC over stdio).
-  -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
     <RootNamespace>MiniTranslator.Adapters.CodexCli</RootNamespace>

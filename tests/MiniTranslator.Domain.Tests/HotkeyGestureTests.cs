@@ -27,9 +27,9 @@ public class HotkeyGestureTests
     }
 
     [Theory]
-    [InlineData(0x11)] // Ctrl
-    [InlineData(0xA0)] // LShift
-    [InlineData(0x5B)] // LWin
+    [InlineData(0x11)]
+    [InlineData(0xA0)]
+    [InlineData(0x5B)]
     public void Rejects_a_modifier_as_the_main_key(int virtualKey)
     {
         var result = HotkeyGesture.Create(HotkeyModifiers.Control, virtualKey);

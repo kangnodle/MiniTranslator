@@ -75,9 +75,9 @@ public class SettingsMapperTests
     {
         var document = new SettingsDocument
         {
-            Hotkey = "Shift+A",           // invalid: shift-only
+            Hotkey = "Shift+A",
             SourceLanguage = "ko",
-            TargetLanguage = "ko",        // invalid: same language
+            TargetLanguage = "ko",
             Behavior = new SettingsDocument.BehaviorDocument { HideOnDeactivate = false },
         };
 

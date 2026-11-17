@@ -2,7 +2,6 @@ using System.Text.Json;
 
 namespace MiniTranslator.Adapters.CodexCli.Tests;
 
-/// <summary>How a fake server ends a browser sign-in.</summary>
 internal enum LoginOutcome
 {
     Succeeds,
@@ -10,10 +9,6 @@ internal enum LoginOutcome
     NeverCompletes,
 }
 
-/// <summary>
-/// The Codex installation every started <see cref="FakeServer"/> shares: who is signed in and how turns and
-/// sign-ins go. Changing it affects running servers too.
-/// </summary>
 internal sealed class Sessions
 {
     public const string Email = "user@example.com";
@@ -26,12 +21,10 @@ internal sealed class Sessions
 
     public LoginOutcome Login { get; set; } = LoginOutcome.Succeeds;
 
-    /// <summary>When set, the server exits instead of answering this method.</summary>
     public string? ExitOn { get; set; }
 
     public List<FakeServer> Started { get; } = [];
 
-    /// <summary>The CLI path each server was started with, for servers started through <see cref="StartFrom"/>.</summary>
     public List<string> Paths { get; } = [];
 
     public ICodexProcess Start()
@@ -48,7 +41,6 @@ internal sealed class Sessions
     }
 }
 
-/// <summary>One <c>turn/start</c> as the fake server saw it, with the lines a real server would answer with.</summary>
 internal sealed record Turn(long RequestId, string ThreadId, string TurnId, string Text)
 {
     public string Reply => JsonSerializer.Serialize(new { id = RequestId, result = new { turn = new { id = TurnId, status = "inProgress" } } });
@@ -68,10 +60,6 @@ internal sealed record Turn(long RequestId, string ThreadId, string TurnId, stri
     });
 }
 
-/// <summary>
-/// Scripted app-server: answers the handshake, account, and sign-in requests itself and each turn with the
-/// session's script, or exits when the script returns <c>null</c>.
-/// </summary>
 internal sealed class FakeServer(Sessions sessions) : ICodexProcess
 {
     public const string LoginId = "login-1";
@@ -101,7 +89,6 @@ internal sealed class FakeServer(Sessions sessions) : ICodexProcess
 
     public bool Disposed { get; private set; }
 
-    /// <summary>Completes once the server has received a turn or a sign-in it will keep the client waiting on.</summary>
     public Task Waiting => _waiting.Task;
 
     public void Exit() => _exited = true;

@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    Application: use cases and the ports (Abstractions/*) they need.
-    Depends only on Domain: no DI container, no UI, no I/O. Wiring happens in the app's composition root.
-  -->
   <PropertyGroup>
     <TargetFramework>$(PortableTargetFramework)</TargetFramework>
     <RootNamespace>MiniTranslator.Application</RootNamespace>

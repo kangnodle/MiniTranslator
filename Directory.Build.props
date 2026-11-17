@@ -1,5 +1,4 @@
 <Project>
-  <!-- Settings shared by every project in the workspace. -->
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -11,7 +10,6 @@
     <SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
   </PropertyGroup>
 
-  <!-- Workspace-wide target frameworks: portable code stays on net11.0; only OS adapters and the app use -windows. -->
   <PropertyGroup>
     <PortableTargetFramework>net11.0</PortableTargetFramework>
     <WindowsTargetFramework>net11.0-windows</WindowsTargetFramework>

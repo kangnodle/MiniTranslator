@@ -24,7 +24,6 @@
     </Window.InputBindings>
 
     <Window.Resources>
-        <!-- A Fluent "settings card" row: icon · title/description · control. -->
         <Style x:Key="SettingsCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
             <Setter Property="Margin" Value="0,0,0,4" />
             <Setter Property="Padding" Value="16,12" />
@@ -84,7 +83,6 @@
                     </Grid>
                 </Border>
 
-                <!-- ── 단축키 ─────────────────────────────────────── -->
                 <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="{DynamicResource Hotkeys}" />
 
                 <Border Style="{StaticResource SettingsCardStyle}">
@@ -135,7 +133,6 @@
                     </Grid>
                 </Border>
 
-                <!-- ── 언어 ───────────────────────────────────────── -->
                 <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="{DynamicResource Languages}" />
 
                 <Border Style="{StaticResource SettingsCardStyle}">
@@ -266,7 +263,6 @@
                     </Grid>
                 </Border>
 
-                <!-- ── 동작 ───────────────────────────────────────── -->
                 <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="{DynamicResource Behavior}" />
 
                 <Border Style="{StaticResource SettingsCardStyle}">
@@ -354,7 +350,6 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Footer -->
         <Border Grid.Row="2"
                 Background="{DynamicResource LayerFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"

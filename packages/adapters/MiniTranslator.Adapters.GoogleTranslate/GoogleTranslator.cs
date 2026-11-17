@@ -4,14 +4,12 @@ using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.GoogleTranslate;
 
-/// <summary>Translates through Google Translate's public endpoint. No credentials are involved.</summary>
 internal sealed class GoogleTranslator(HttpClient http) : ITranslator
 {
     public async Task<Result<TranslationResult>> TranslateAsync(
         TranslationRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Use the public endpoint's GET format; form POSTs can return HTTP 429 even when GET succeeds.
         using var httpRequest = new HttpRequestMessage(HttpMethod.Get, GoogleTranslateProtocol.BuildRequestUri(request));
 
         try
