@@ -71,6 +71,7 @@ public class WindowUxTests
                 try
                 {
                     VerifyTranslator(translator, viewModel);
+                    VerifyCodexModelSelection();
                     VerifySettings(settings, settingsViewModel);
                     VerifyAppFont(app, translator, settings, settingsViewModel, store);
                     var cardColor = ((SolidColorBrush)((Border)translator.FindName("ResultPanel")).Background).Color;
@@ -430,6 +431,39 @@ public class WindowUxTests
         app.ApplyFont(AppFont.System);
         RefreshLayout(translator);
         Assert.Equal(original, input.FontFamily);
+    }
+
+    private static void VerifyCodexModelSelection()
+    {
+        var store = new SettingsStore(new InMemorySettingsRepository());
+        using var hotkeys = new HotkeyManager(new FakeGlobalHotkey());
+        foreach (var model in new[] { "gpt-6.1-terra", "custom-codex-model", string.Empty })
+        {
+            var viewModel = new SettingsViewModel(new SettingsEditor(store, hotkeys,
+                new FakeStartupRegistration(), new FakeCodexAccount()));
+            var window = new SettingsView(viewModel);
+            var engines = (ComboBox)window.FindName("EngineBox");
+            engines.SetCurrentValue(ComboBox.SelectedValueProperty, TranslationEngine.Codex);
+            Layout(window, 700, 600);
+            var models = Assert.IsType<ComboBox>(window.FindName("CodexModelBox"));
+            Assert.True(models.IsEditable);
+            Assert.Equal(store.Current.Codex.Model, models.Text);
+            Assert.NotEmpty(models.Items);
+            Assert.False(string.IsNullOrEmpty(AutomationProperties.GetName(models)));
+            if (model == "gpt-6.1-terra")
+            {
+                models.SetCurrentValue(ComboBox.SelectedItemProperty,
+                    models.Items.Cast<ComboBoxItem>().Single(item => Equals(item.Content, model)));
+            }
+            else
+            {
+                models.SetCurrentValue(ComboBox.TextProperty, model);
+            }
+            Assert.Equal(model, viewModel.CodexModel);
+            viewModel.SaveCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+            Assert.Equal(model, store.Current.Codex.Model);
+            window.TryClose();
+        }
     }
 
     private static void VerifyEngineToolbar(SettingsView window)

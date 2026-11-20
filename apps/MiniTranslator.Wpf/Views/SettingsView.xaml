@@ -249,9 +249,16 @@
                                            Text="sonnet" />
                             </Grid>
                             <Grid x:Name="CodexModelPanel" Grid.Column="3" Visibility="{Binding IsSelected, ElementName=CodexOption, Converter={StaticResource BooleanToVisibility}}">
-                                <TextBox x:Name="CodexModelBox" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                <ComboBox x:Name="CodexModelBox" IsEditable="True" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
                                           AutomationProperties.Name="{DynamicResource EngineModel}" AutomationProperties.HelpText="{DynamicResource CodexModelHint}"
-                                          Text="{Binding CodexModel, UpdateSourceTrigger=PropertyChanged}" />
+                                          Text="{Binding CodexModel, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBoxItem Content="gpt-6.1-terra" />
+                                    <ComboBoxItem Content="gpt-6.2-sol" />
+                                    <ComboBoxItem Content="gpt-6.2-astra" />
+                                    <ComboBoxItem Content="gpt-6.1-sol" />
+                                    <ComboBoxItem Content="gpt-6-astra" />
+                                    <ComboBoxItem Content="gpt-6-luna" />
+                                </ComboBox>
                                 <TextBlock Style="{StaticResource ToolbarPlaceholder}" Tag="{Binding ElementName=CodexModelBox}"
                                            Text="gpt-6.1-terra" />
                             </Grid>

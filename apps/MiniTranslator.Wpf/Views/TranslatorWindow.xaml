@@ -16,7 +16,7 @@
         ShowActivated="False" Topmost="True">
 
     <Grid>
-        <Grid x:Name="TranslationView" Margin="24,16,24,24">
+        <Grid x:Name="TranslationView" Margin="24,16,24,16">
             <Grid.InputBindings>
                 <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding TranslateCommand}" />
                 <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SwapLanguagesCommand}" />
@@ -223,10 +223,10 @@
                 </Border>
             </Grid>
 
-            <StackPanel Grid.Row="3" Margin="0,16,0,0">
+            <StackPanel Grid.Row="3" Margin="0,8,0,0">
                 <TextBlock Style="{StaticResource SecondaryTextStyle}">
                     <Run Text="{Binding HotkeyText, Mode=OneWay}" /><Run Text="{DynamicResource ToggleWindowHint}" />
-                    <LineBreak /><Run Text="{DynamicResource HideWindowHint}" />
+                    <Run Text="  |  " /><Run Text="{DynamicResource HideWindowHint}" />
                 </TextBlock>
                 <TextBlock x:Name="CopyrightText" Margin="0,8,0,0" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap">
                     <Run Text="© 2026 kangnodle@gmail.com" />
