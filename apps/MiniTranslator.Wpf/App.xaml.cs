@@ -24,6 +24,8 @@ public partial class App : System.Windows.Application
     public App()
     {
         InitializeComponent();
+        Resources[AppFont.System] = SystemFonts.MessageFontFamily;
+        ApplyFont(AppFont.System);
         ApplyUiLanguage(UiLanguage.Korean);
     }
 
@@ -36,8 +38,8 @@ public partial class App : System.Windows.Application
         var settings = _services.GetRequiredService<SettingsStore>();
         await settings.InitializeAsync();
         ApplyTheme(settings.Current.Theme);
-        ApplyUiLanguage(settings.Current.UiLanguage);
-        settings.Changed += (_, current) => ApplyUiLanguage(current.UiLanguage);
+        ApplyDisplaySettings(settings.Current);
+        settings.Changed += (_, current) => ApplyDisplaySettings(current);
 
         _singleInstance = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
         if (!isFirstInstance)
@@ -56,6 +58,18 @@ public partial class App : System.Windows.Application
 
         if (e.Args.Contains("--show", StringComparer.OrdinalIgnoreCase)) _shell.ShowTranslator();
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) _shell.ShowSettings();
+    }
+
+    private void ApplyDisplaySettings(AppSettings settings)
+    {
+        ApplyUiLanguage(settings.UiLanguage);
+        ApplyFont(settings.Font);
+    }
+
+    public void ApplyFont(AppFont font)
+    {
+        var family = (FontFamily)Resources[font];
+        if (!Equals(Resources["AppFontFamily"], family)) Resources["AppFontFamily"] = family;
     }
 
     public void ApplyTheme(AppTheme theme)

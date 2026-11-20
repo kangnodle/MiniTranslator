@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:MiniTranslator.Wpf.Converters"
+             xmlns:settings="clr-namespace:MiniTranslator.Domain.Settings;assembly=MiniTranslator.Domain"
              ThemeMode="System"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
@@ -23,6 +24,10 @@
                 </TextBlock>
             </DataTemplate>
 
+            <FontFamily x:Key="{x:Static settings:AppFont.MalgunGothic}">Malgun Gothic, Global User Interface</FontFamily>
+            <FontFamily x:Key="{x:Static settings:AppFont.Batang}">Batang, Global User Interface</FontFamily>
+            <FontFamily x:Key="{x:Static settings:AppFont.Gulim}">Gulim, Global User Interface</FontFamily>
+            <FontFamily x:Key="{x:Static settings:AppFont.NotoSansKR}">Noto Sans KR, Global User Interface</FontFamily>
             <FontFamily x:Key="FluentIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
             <Style x:Key="PageTitleStyle" TargetType="TextBlock">

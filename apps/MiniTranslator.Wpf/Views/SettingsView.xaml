@@ -1,4 +1,4 @@
-<Window x:Class="MiniTranslator.Wpf.Views.SettingsWindow"
+<UserControl x:Class="MiniTranslator.Wpf.Views.SettingsView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,22 +8,18 @@
         xmlns:settings="clr-namespace:MiniTranslator.Domain.Settings;assembly=MiniTranslator.Domain"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
-        Title="{DynamicResource SettingsTitle}"
-        Language="{DynamicResource UiCulture}"
+        Language="{DynamicResource UiCulture}" FontFamily="{DynamicResource AppFontFamily}"
         UseLayoutRounding="True"
         FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-        Icon="/MiniTranslator;component/Assets/app.ico"
-        Width="720" Height="620"
-        MinWidth="560" MinHeight="480"
         Background="{DynamicResource AppSurfaceBrush}"
-        WindowStartupLocation="CenterScreen"
+        Focusable="True"
         FocusManager.FocusedElement="{Binding ElementName=Scroller}">
 
-    <Window.InputBindings>
+    <UserControl.InputBindings>
         <KeyBinding Key="S" Modifiers="Alt" Command="{Binding SaveCommand}" />
-    </Window.InputBindings>
+    </UserControl.InputBindings>
 
-    <Window.Resources>
+    <UserControl.Resources>
         <Style x:Key="SettingsCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
             <Setter Property="Margin" Value="0,0,0,4" />
             <Setter Property="Padding" Value="16,12" />
@@ -33,7 +29,33 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         </Style>
-    </Window.Resources>
+        <Style x:Key="ToolbarLabel" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+        </Style>
+        <Style x:Key="ToolbarDivider" TargetType="Border">
+            <Setter Property="Margin" Value="6,4,0,4" />
+            <Setter Property="Padding" Value="6,0,0,0" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+        <Style x:Key="ToolbarPlaceholder" TargetType="TextBlock" BasedOn="{StaticResource ToolbarLabel}">
+            <Setter Property="Margin" Value="6,0,26,0" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Tag.Text, RelativeSource={RelativeSource Self}}" Value="" />
+                        <Condition Binding="{Binding Tag.IsKeyboardFocusWithin, RelativeSource={RelativeSource Self}}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Visible" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -43,9 +65,17 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="24,16,24,0">
-            <TextBlock Style="{StaticResource PageTitleStyle}" Text="{DynamicResource Settings}" />
+            <DockPanel>
+                <Button x:Name="BackButton" Style="{StaticResource IconButtonStyle}" Margin="0,0,12,0"
+                        Command="{Binding CancelCommand}" AutomationProperties.Name="{DynamicResource Back}"
+                        ToolTip="{DynamicResource Back}"
+                        VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource IconStyle}" Text="&#xE72B;" />
+                </Button>
+                <TextBlock x:Name="SettingsHeading" Style="{StaticResource PageTitleStyle}" Text="{DynamicResource Settings}" />
+            </DockPanel>
             <TextBlock Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0"
-                       Text="{DynamicResource SettingsHint}" />
+                       Text="{DynamicResource SettingsHint}" TextWrapping="Wrap" />
         </StackPanel>
 
         <ScrollViewer x:Name="Scroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,0,24,16">
@@ -80,6 +110,37 @@
                                                     AutomationProperties.LiveSetting="Assertive"
                                                     Visibility="{Binding ThemeError, Converter={StaticResource HasValueToVisibility}}" />
                         </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="1.1*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Style="{StaticResource FieldLabelStyle}" Margin="0,0,16,0" VerticalAlignment="Center"
+                               Content="{DynamicResource AppFontLabel}" Target="{Binding ElementName=AppFontBox}" />
+                        <ComboBox x:Name="AppFontBox" Grid.Column="1" AutomationProperties.Name="{DynamicResource AppFontLabel}"
+                                  SelectedValuePath="Tag" SelectedValue="{Binding Font}">
+                            <ComboBoxItem Content="{DynamicResource SystemFont}" Tag="{x:Static settings:AppFont.System}"
+                                          FontFamily="{StaticResource {x:Static settings:AppFont.System}}" />
+                            <ComboBoxItem Content="{DynamicResource MalgunGothic}" Tag="{x:Static settings:AppFont.MalgunGothic}"
+                                          FontFamily="{StaticResource {x:Static settings:AppFont.MalgunGothic}}" />
+                            <ComboBoxItem Content="{DynamicResource Batang}" Tag="{x:Static settings:AppFont.Batang}"
+                                          FontFamily="{StaticResource {x:Static settings:AppFont.Batang}}" />
+                            <ComboBoxItem Content="{DynamicResource Gulim}" Tag="{x:Static settings:AppFont.Gulim}"
+                                          FontFamily="{StaticResource {x:Static settings:AppFont.Gulim}}" />
+                            <ComboBoxItem Content="Noto Sans KR" Tag="{x:Static settings:AppFont.NotoSansKR}"
+                                          FontFamily="{StaticResource {x:Static settings:AppFont.NotoSansKR}}" />
+                        </ComboBox>
+                        <Border Grid.Column="2" Margin="16,2,0,2" Padding="16,0,0,0" BorderThickness="1,0,0,0"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                            <TextBlock x:Name="AppFontPreview" Text="오늘도 반가워요. Hello!" VerticalAlignment="Center"
+                                       FontFamily="{Binding SelectedItem.FontFamily, ElementName=AppFontBox}"
+                                       FontSize="16" TextTrimming="CharacterEllipsis" />
+                        </Border>
                     </Grid>
                 </Border>
 
@@ -151,42 +212,55 @@
 
                 <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel>
-                        <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource TranslationEngine}"
-                               Target="{Binding ElementName=EngineBox}" />
-                        <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource TranslationEngineHint}" />
-                        <ComboBox x:Name="EngineBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
-                                  AutomationProperties.Name="{DynamicResource TranslationEngine}"
-                                  SelectedValuePath="Tag" SelectedValue="{Binding Engine}">
-                            <ComboBoxItem Content="{DynamicResource EngineClaude}" Tag="{x:Static settings:TranslationEngine.Claude}" />
-                            <ComboBoxItem Content="{DynamicResource EngineCodex}" Tag="{x:Static settings:TranslationEngine.Codex}" />
-                        </ComboBox>
-                        <StackPanel Margin="0,16,0,0">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Engine}" Value="{x:Static settings:TranslationEngine.Claude}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineModel}"
-                                   Target="{Binding ElementName=ClaudeModelBox}" />
-                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource ClaudeModelHint}" />
-                            <ComboBox x:Name="ClaudeModelBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
-                                      AutomationProperties.Name="{DynamicResource EngineModel}"
-                                      Text="{Binding ClaudeModel, UpdateSourceTrigger=PropertyChanged}">
-                                <ComboBoxItem Content="sonnet" />
-                                <ComboBoxItem Content="opus" />
-                                <ComboBoxItem Content="haiku" />
+                        <Grid x:Name="EngineToolbar" SizeChanged="OnEngineToolbarSizeChanged">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="EngineColumn" Width="0.85*" MinWidth="88" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="ModelColumn" Width="1.2*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="EffortColumn" Width="*" MinWidth="96" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource ToolbarLabel}" Text="{DynamicResource TranslationEngine}" />
+                            <ComboBox x:Name="EngineBox" Grid.Column="1" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                      AutomationProperties.Name="{DynamicResource TranslationEngine}" AutomationProperties.HelpText="{DynamicResource TranslationEngineHint}"
+                                      SelectedValuePath="Tag" SelectedValue="{Binding Engine}">
+                                <ComboBoxItem x:Name="ClaudeOption" Content="Claude" Tag="{x:Static settings:TranslationEngine.Claude}" />
+                                <ComboBoxItem x:Name="CodexOption" Content="Codex" Tag="{x:Static settings:TranslationEngine.Codex}" />
                             </ComboBox>
-                            <StackPanel Margin="0,16,0,0">
-                                <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineEffort}"
-                                       Target="{Binding ElementName=ClaudeEffortBox}" />
-                                <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource EngineEffortHint}" />
-                                <ComboBox x:Name="ClaudeEffortBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
-                                          AutomationProperties.Name="{DynamicResource EngineEffort}"
+                            <Border x:Name="ModelLabel" Grid.Column="2" Style="{StaticResource ToolbarDivider}">
+                                <TextBlock Style="{StaticResource ToolbarLabel}" Text="{DynamicResource EngineModel}" />
+                            </Border>
+                            <Grid x:Name="ClaudeModelPanel" Grid.Column="3" Visibility="{Binding IsSelected, ElementName=ClaudeOption, Converter={StaticResource BooleanToVisibility}}">
+                                <ComboBox x:Name="ClaudeModelBox" IsEditable="True" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                          AutomationProperties.Name="{DynamicResource EngineModel}" AutomationProperties.HelpText="{DynamicResource ClaudeModelHint}"
+                                          Text="{Binding ClaudeModel, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBoxItem Content="sonnet" />
+                                    <ComboBoxItem Content="opus" />
+                                    <ComboBoxItem Content="haiku" />
+                                </ComboBox>
+                                <TextBlock Style="{StaticResource ToolbarPlaceholder}" Tag="{Binding ElementName=ClaudeModelBox}"
+                                           Text="sonnet" />
+                            </Grid>
+                            <Grid x:Name="CodexModelPanel" Grid.Column="3" Visibility="{Binding IsSelected, ElementName=CodexOption, Converter={StaticResource BooleanToVisibility}}">
+                                <TextBox x:Name="CodexModelBox" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                          AutomationProperties.Name="{DynamicResource EngineModel}" AutomationProperties.HelpText="{DynamicResource CodexModelHint}"
+                                          Text="{Binding CodexModel, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Style="{StaticResource ToolbarPlaceholder}" Tag="{Binding ElementName=CodexModelBox}"
+                                           Text="gpt-6.1-terra" />
+                            </Grid>
+                            <Border x:Name="EffortLabel" Grid.Column="4" Style="{StaticResource ToolbarDivider}">
+                                <TextBlock Style="{StaticResource ToolbarLabel}" Text="{DynamicResource EngineEffort}" />
+                            </Border>
+                            <Grid x:Name="ClaudeEffortPanel" Grid.Column="5" Visibility="{Binding IsSelected, ElementName=ClaudeOption, Converter={StaticResource BooleanToVisibility}}">
+                                <ComboBox x:Name="ClaudeEffortBox" IsEditable="True" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                          AutomationProperties.Name="{DynamicResource EngineEffort}" AutomationProperties.HelpText="{DynamicResource EngineEffortHint}"
                                           Text="{Binding ClaudeEffort, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBoxItem Content="low" />
                                     <ComboBoxItem Content="medium" />
@@ -194,37 +268,32 @@
                                     <ComboBoxItem Content="xhigh" />
                                     <ComboBoxItem Content="max" />
                                 </ComboBox>
-                            </StackPanel>
-                        </StackPanel>
-                        <StackPanel Margin="0,16,0,0">
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Engine}" Value="{x:Static settings:TranslationEngine.Codex}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineModel}"
-                                   Target="{Binding ElementName=CodexModelBox}" />
-                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexModelHint}" />
-                            <TextBox x:Name="CodexModelBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
-                                     AutomationProperties.Name="{DynamicResource EngineModel}"
-                                     Text="{Binding CodexModel, UpdateSourceTrigger=PropertyChanged}" />
-                            <StackPanel Margin="0,16,0,16">
-                                <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineEffort}"
-                                       Target="{Binding ElementName=CodexEffortBox}" />
-                                <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource EngineEffortHint}" />
-                                <ComboBox x:Name="CodexEffortBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
-                                          AutomationProperties.Name="{DynamicResource EngineEffort}"
+                                <TextBlock Style="{StaticResource ToolbarPlaceholder}" Tag="{Binding ElementName=ClaudeEffortBox}"
+                                           Text="{DynamicResource CliDefault}" />
+                            </Grid>
+                            <Grid x:Name="CodexEffortPanel" Grid.Column="5" Visibility="{Binding IsSelected, ElementName=CodexOption, Converter={StaticResource BooleanToVisibility}}">
+                                <ComboBox x:Name="CodexEffortBox" IsEditable="True" Padding="5,4" Background="Transparent" BorderBrush="Transparent"
+                                          AutomationProperties.Name="{DynamicResource EngineEffort}" AutomationProperties.HelpText="{DynamicResource EngineEffortHint}"
                                           Text="{Binding CodexEffort, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBoxItem Content="low" />
                                     <ComboBoxItem Content="medium" />
                                     <ComboBoxItem Content="high" />
                                 </ComboBox>
-                            </StackPanel>
+                                <TextBlock Style="{StaticResource ToolbarPlaceholder}" Tag="{Binding ElementName=CodexEffortBox}"
+                                           Text="{DynamicResource CliDefault}" />
+                            </Grid>
+                            <ToggleButton x:Name="EngineHelpButton" Grid.Column="6" Content="?" Margin="6,0,0,0"
+                                          Width="26" Height="26" MinWidth="0" MinHeight="0" Padding="0"
+                                          AutomationProperties.Name="{DynamicResource EngineHelp}" ToolTip="{DynamicResource EngineHelp}" />
+                        </Grid>
+                        <StackPanel x:Name="EngineHelpPanel" Margin="0,8,0,0"
+                                    Visibility="{Binding IsChecked, ElementName=EngineHelpButton, Converter={StaticResource BooleanToVisibility}}">
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource TranslationEngineHint}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource ClaudeModelHint}" Visibility="{Binding IsSelected, ElementName=ClaudeOption, Converter={StaticResource BooleanToVisibility}}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexModelHint}" Visibility="{Binding IsSelected, ElementName=CodexOption, Converter={StaticResource BooleanToVisibility}}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource EngineEffortHint}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,16,0,0" Visibility="{Binding IsSelected, ElementName=CodexOption, Converter={StaticResource BooleanToVisibility}}">
                             <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource CodexExecutablePath}"
                                    Target="{Binding ElementName=CodexExecutablePathBox}" />
                             <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexExecutablePathHint}" />
@@ -441,4 +510,4 @@
             </Grid>
         </Border>
     </Grid>
-</Window>
+</UserControl>

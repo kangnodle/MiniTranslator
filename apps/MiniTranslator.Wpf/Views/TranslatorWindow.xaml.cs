@@ -12,6 +12,9 @@ public partial class TranslatorWindow : Window
     private const double OffScreen = -32000;
 
     private bool _prewarming;
+    private IInputElement? _translationFocus;
+    private Point _sourceScroll;
+    private Point _resultScroll;
 
     public TranslatorWindow(TranslatorViewModel viewModel)
     {
@@ -20,7 +23,7 @@ public partial class TranslatorWindow : Window
 
         Deactivated += (_, _) =>
         {
-            if (viewModel.HideOnDeactivate && IsVisible)
+            if (viewModel.HideOnDeactivate && IsVisible && SettingsHost.Content is null)
             {
                 Hide();
             }
@@ -28,6 +31,64 @@ public partial class TranslatorWindow : Window
     }
 
     public bool AllowClose { get; set; }
+
+    public void ShowSettings(Func<SettingsViewModel> createViewModel)
+    {
+        if (SettingsHost.Content is null)
+        {
+            _translationFocus = TranslationView.IsKeyboardFocusWithin ? Keyboard.FocusedElement : SettingsButton;
+            _sourceScroll = new Point(SourceTextBox.HorizontalOffset, SourceTextBox.VerticalOffset);
+            _resultScroll = new Point(ResultTextBox.HorizontalOffset, ResultTextBox.VerticalOffset);
+            var view = new SettingsView(createViewModel());
+            view.CloseRequested += OnSettingsCloseRequested;
+            SettingsHost.Content = view;
+            TranslationView.Visibility = Visibility.Hidden;
+            SettingsHost.Visibility = Visibility.Visible;
+            SetResourceReference(TitleProperty, "SettingsTitle");
+        }
+
+        ShowInactive();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Activate();
+        ((SettingsView)SettingsHost.Content).Focus();
+    }
+
+    private void OnSettingsCloseRequested(object? sender, EventArgs e) => CloseSettings();
+
+    private bool CloseSettings()
+    {
+        if (SettingsHost.Content is not SettingsView view)
+        {
+            return true;
+        }
+
+        if (!view.TryClose())
+        {
+            return false;
+        }
+
+        view.CloseRequested -= OnSettingsCloseRequested;
+        SettingsHost.Content = null;
+        SettingsHost.Visibility = Visibility.Collapsed;
+        TranslationView.Visibility = Visibility.Visible;
+        Title = "MiniTranslator";
+        if (_translationFocus is not null)
+        {
+            Keyboard.Focus(_translationFocus);
+            _translationFocus = null;
+        }
+
+        SourceTextBox.ScrollToHorizontalOffset(_sourceScroll.X);
+        SourceTextBox.ScrollToVerticalOffset(_sourceScroll.Y);
+        ResultTextBox.ScrollToHorizontalOffset(_resultScroll.X);
+        ResultTextBox.ScrollToVerticalOffset(_resultScroll.Y);
+
+        return true;
+    }
 
     public void Prewarm()
     {
@@ -82,6 +143,11 @@ public partial class TranslatorWindow : Window
         }
 
         Activate();
+        if (!CloseSettings())
+        {
+            return;
+        }
+
         SourceTextBox.Focus();
         SourceTextBox.SelectAll();
     }
@@ -101,7 +167,7 @@ public partial class TranslatorWindow : Window
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        if (e.Key == Key.Escape && SettingsHost.Content is null)
         {
             Hide();
             e.Handled = true;
@@ -111,8 +177,27 @@ public partial class TranslatorWindow : Window
         base.OnPreviewKeyDown(e);
     }
 
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && SettingsHost.Content is not null)
+        {
+            CloseSettings();
+            e.Handled = true;
+            return;
+        }
+
+        base.OnKeyDown(e);
+    }
+
     protected override void OnClosing(CancelEventArgs e)
     {
+        if (!CloseSettings() && !AllowClose)
+        {
+            e.Cancel = true;
+            base.OnClosing(e);
+            return;
+        }
+
         if (!AllowClose)
         {
             e.Cancel = true;

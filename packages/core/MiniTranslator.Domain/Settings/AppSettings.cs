@@ -22,6 +22,7 @@ public sealed record AppSettings(
 {
     public AppTheme Theme { get; init; } = AppTheme.System;
     public UiLanguage UiLanguage { get; init; } = UiLanguage.Korean;
+    public AppFont Font { get; init; } = AppFont.System;
     public TranslationEngine Engine { get; init; } = TranslationEngine.Claude;
 
     public string CodexExecutablePath { get; init; } = string.Empty;
@@ -37,6 +38,11 @@ public sealed record AppSettings(
             return SettingsErrors.InvalidUiLanguage;
         }
 
+        if (!Enum.IsDefined(draft.Font))
+        {
+            return SettingsErrors.InvalidFont;
+        }
+
         if (!Enum.IsDefined(draft.Engine))
         {
             return SettingsErrors.InvalidEngine;
@@ -47,6 +53,7 @@ public sealed record AppSettings(
             Hotkey = draft.Hotkey == original.Hotkey ? Hotkey : draft.Hotkey,
             Languages = draft.Languages == original.Languages ? Languages : draft.Languages,
             UiLanguage = draft.UiLanguage == original.UiLanguage ? UiLanguage : draft.UiLanguage,
+            Font = draft.Font == original.Font ? Font : draft.Font,
             Engine = draft.Engine == original.Engine ? Engine : draft.Engine,
             CodexExecutablePath = draft.CodexExecutablePath == original.CodexExecutablePath
                 ? CodexExecutablePath : NormalizePath(draft.CodexExecutablePath),

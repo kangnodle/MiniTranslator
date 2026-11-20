@@ -13,6 +13,7 @@ internal static class SettingsMapper
         TargetLanguage = settings.Languages.Target.Code,
         Theme = settings.Theme.ToString(),
         UiLanguage = settings.UiLanguage.ToString(),
+        Font = settings.Font.ToString(),
         Engine = settings.Engine.ToString(),
         CodexExecutablePath = settings.CodexExecutablePath.Length == 0 ? null : settings.CodexExecutablePath,
         Claude = ToDocument(settings.Claude),
@@ -46,6 +47,8 @@ internal static class SettingsMapper
                 ? theme : defaults.Theme,
             UiLanguage = Enum.TryParse<UiLanguage>(document.UiLanguage, ignoreCase: true, out var uiLanguage) && Enum.IsDefined(uiLanguage)
                 ? uiLanguage : defaults.UiLanguage,
+            Font = Enum.TryParse<AppFont>(document.Font, ignoreCase: true, out var font) && Enum.IsDefined(font)
+                ? font : defaults.Font,
             Engine = Enum.TryParse<TranslationEngine>(document.Engine, ignoreCase: true, out var engine) && Enum.IsDefined(engine)
                 ? engine : defaults.Engine,
             CodexExecutablePath = AppSettings.NormalizePath(document.CodexExecutablePath),

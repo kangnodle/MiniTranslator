@@ -7,10 +7,12 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
+using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Application.Hotkeys;
 using MiniTranslator.Application.Settings;
 using MiniTranslator.Application.UseCases;
 using MiniTranslator.Domain.Settings;
+using MiniTranslator.Domain.Common;
 using MiniTranslator.Presentation.ViewModels;
 using MiniTranslator.Testing;
 using MiniTranslator.Wpf;
@@ -48,7 +50,7 @@ public class WindowUxTests
 
     private static void VerifyWindows()
     {
-        var app = new App();
+        var app = CreateAppWithoutStartup();
         app.InitializeComponent();
         try
         {
@@ -64,11 +66,13 @@ public class WindowUxTests
                 var translator = new TranslatorWindow(viewModel) { AllowClose = true };
                 var hotkeys = new HotkeyManager(new FakeGlobalHotkey());
                 var settingsViewModel = new SettingsViewModel(new SettingsEditor(store, hotkeys, new FakeStartupRegistration(), new FakeCodexAccount()));
-                var settings = new SettingsWindow(settingsViewModel);
+                var settings = new SettingsView(settingsViewModel) { MinWidth = 560, MinHeight = 480 };
+                var settingsHost = new Window { Content = settings };
                 try
                 {
                     VerifyTranslator(translator, viewModel);
                     VerifySettings(settings, settingsViewModel);
+                    VerifyAppFont(app, translator, settings, settingsViewModel, store);
                     var cardColor = ((SolidColorBrush)((Border)translator.FindName("ResultPanel")).Background).Color;
                     if (previousCardColor is Color previous)
                     {
@@ -85,11 +89,13 @@ public class WindowUxTests
                     Assert.Equal(ThemeMode.System, app.ThemeMode);
                     Assert.NotNull(settingsViewModel.ThemeError);
                     VerifyUiLanguages(app, translator, settings, settingsViewModel);
+                    VerifySettingsNavigation(translator, viewModel, store, hotkeys, repository);
                 }
                 finally
                 {
                     translator.Close();
-                    settings.Close();
+                    settings.TryClose();
+                    settingsHost.Close();
                     hotkeys.Dispose();
                 }
             }
@@ -180,7 +186,165 @@ public class WindowUxTests
         }
     }
 
-    private static void VerifySettings(SettingsWindow window, SettingsViewModel viewModel)
+    private static void VerifySettingsNavigation(TranslatorWindow window, TranslatorViewModel translator,
+        SettingsStore store, HotkeyManager hotkeys, InMemorySettingsRepository repository)
+    {
+        repository.FailSaveWith = null;
+        translator.SourceText = string.Join("\n", Enumerable.Range(1, 80).Select(index => $"Source line {index}"));
+        translator.TranslatedText = string.Join("\n", Enumerable.Range(1, 80).Select(index => $"번역 결과 {index}"));
+        window.Show();
+        Layout(window, 440, 640);
+        window.Left = 137;
+        window.Top = 91;
+        var source = (TextBox)window.FindName("SourceTextBox");
+        var result = (TextBox)window.FindName("ResultTextBox");
+        window.Activate();
+        source.Focus();
+        source.Select(12, 7);
+        source.ScrollToVerticalOffset(120);
+        result.ScrollToVerticalOffset(180);
+        RefreshLayout(window);
+        var sourceOffset = source.VerticalOffset;
+        var resultOffset = result.VerticalOffset;
+        Assert.True(sourceOffset > 0);
+        Assert.True(resultOffset > 0);
+        var bounds = new Rect(window.Left, window.Top, window.Width, window.Height);
+        var sourceText = source.Text;
+        var resultText = result.Text;
+
+        foreach (var action in new[] { "cancel", "save", "back", "escape" })
+        {
+            var draft = new SettingsViewModel(new SettingsEditor(store, hotkeys,
+                new FakeStartupRegistration(), new FakeCodexAccount()));
+            window.ShowSettings(() => draft);
+            RefreshLayout(window);
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            var settings = Descendants((DependencyObject)window.Content).OfType<SettingsView>().Single();
+            Assert.Same(window, Window.GetWindow(settings));
+            Assert.Equal(bounds, new Rect(window.Left, window.Top, window.Width, window.Height));
+            Assert.False(source.IsVisible);
+            Assert.True(settings.IsVisible);
+            Assert.True(((ScrollViewer)settings.FindName("Scroller")).ActualHeight > 0);
+            VerifyEngineToolbar(settings);
+            var themeBox = (ComboBox)settings.FindName("ThemeBox");
+            themeBox.Focus();
+            themeBox.IsDropDownOpen = true;
+            Assert.True(themeBox.IsDropDownOpen);
+            PressEscape(themeBox);
+            Assert.False(themeBox.IsDropDownOpen);
+            Assert.Single(Descendants((DependencyObject)window.Content).OfType<SettingsView>());
+            Assert.DoesNotContain(window.InputBindings.OfType<System.Windows.Input.KeyBinding>(),
+                binding => binding.Command == translator.TranslateCommand);
+            window.ShowSettings(() => throw new InvalidOperationException("Settings should reuse the open draft."));
+            if (action == "save")
+            {
+                repository.FailSaveWith = new MiniTranslator.Domain.Common.Error("Disk", "Disk full");
+                draft.CaptureSelectionOnHotkey = !draft.CaptureSelectionOnHotkey;
+                draft.SaveCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                Assert.NotNull(draft.SaveError);
+                Assert.Single(Descendants((DependencyObject)window.Content).OfType<SettingsView>());
+                repository.FailSaveWith = null;
+                draft.SaveCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+            }
+            else if (action == "back")
+            {
+                var back = (Button)settings.FindName("BackButton");
+                back.Command.Execute(back.CommandParameter);
+            }
+            else if (action == "escape")
+            {
+                PressEscape(window);
+            }
+            else
+            {
+                draft.CancelCommand.Execute(null);
+            }
+
+            RefreshLayout(window);
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            Assert.Empty(Descendants((DependencyObject)window.Content).OfType<SettingsView>());
+            Assert.Equal(bounds, new Rect(window.Left, window.Top, window.Width, window.Height));
+            Assert.Equal(sourceText, source.Text);
+            Assert.Equal(resultText, result.Text);
+            Assert.Equal(12, source.SelectionStart);
+            Assert.Equal(7, source.SelectionLength);
+            Assert.Equal(sourceOffset, source.VerticalOffset);
+            Assert.Equal(resultOffset, result.VerticalOffset);
+        }
+
+        var delayedRepository = new DeferredSettingsRepository();
+        var delayedStore = new SettingsStore(delayedRepository);
+        var previousDraft = new SettingsViewModel(new SettingsEditor(delayedStore, hotkeys,
+            new FakeStartupRegistration(), new FakeCodexAccount()));
+        window.ShowSettings(() => previousDraft);
+        previousDraft.CaptureSelectionOnHotkey = !previousDraft.CaptureSelectionOnHotkey;
+        var previousSave = previousDraft.SaveCommand.ExecuteAsync(null);
+        Assert.False(previousSave.IsCompleted);
+        previousDraft.CancelCommand.Execute(null);
+        var currentDraft = new SettingsViewModel(new SettingsEditor(store, hotkeys,
+            new FakeStartupRegistration(), new FakeCodexAccount()));
+        window.ShowSettings(() => currentDraft);
+        delayedRepository.SaveCompletion.SetResult(Result.Success());
+        window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        Assert.True(previousSave.IsCompleted);
+        previousSave.GetAwaiter().GetResult();
+        Assert.Same(currentDraft, Descendants((DependencyObject)window.Content).OfType<SettingsView>().Single().DataContext);
+        currentDraft.CancelCommand.Execute(null);
+    }
+
+    private sealed class DeferredSettingsRepository : ISettingsRepository
+    {
+        public TaskCompletionSource<Result<Unit>> SaveCompletion { get; } = new();
+
+        public Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(AppSettings.Default);
+
+        public Task<Result<Unit>> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default) =>
+            SaveCompletion.Task;
+    }
+
+    private static App CreateAppWithoutStartup()
+    {
+        var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+        System.Windows.Threading.DispatcherOperation? startup = null;
+        void CaptureStartup(object? sender, System.Windows.Threading.DispatcherHookEventArgs e)
+        {
+            if (e.Operation.Priority == System.Windows.Threading.DispatcherPriority.Send)
+            {
+                startup ??= e.Operation;
+            }
+        }
+
+        dispatcher.Hooks.OperationPosted += CaptureStartup;
+        try
+        {
+            var app = new App();
+            Assert.NotNull(startup);
+            Assert.True(startup.Abort());
+            return app;
+        }
+        finally
+        {
+            dispatcher.Hooks.OperationPosted -= CaptureStartup;
+        }
+    }
+
+    private static void PressEscape(UIElement target)
+    {
+        var key = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(target)!, 0, System.Windows.Input.Key.Escape)
+        {
+            RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent,
+        };
+        target.RaiseEvent(key);
+        if (!key.Handled)
+        {
+            key.RoutedEvent = System.Windows.Input.Keyboard.KeyDownEvent;
+            target.RaiseEvent(key);
+        }
+    }
+
+    private static void VerifySettings(SettingsView window, SettingsViewModel viewModel)
     {
         Layout(window, 560, 480);
         Assert.True(((HotkeyBox)window.FindName("HotkeyBox")).ActualWidth >= 250);
@@ -200,21 +364,22 @@ public class WindowUxTests
         Assert.All(buttons.Where(button => button.IsDefault || button.IsCancel), button => Assert.True(button.ActualWidth >= 120));
     }
 
-    private static void VerifyUiLanguages(App app, TranslatorWindow translator, SettingsWindow settings, SettingsViewModel viewModel)
+    private static void VerifyUiLanguages(App app, TranslatorWindow translator, SettingsView settings, SettingsViewModel viewModel)
     {
         var languageBox = (ComboBox)settings.FindName("UiLanguageBox");
         Assert.Equal(2, languageBox.Items.Count);
         Assert.Equal(UiLanguage.Korean, languageBox.SelectedValue);
         languageBox.SelectedValue = UiLanguage.English;
         Assert.Equal(UiLanguage.English, viewModel.UiLanguage);
-        Assert.Equal("MiniTranslator 설정", settings.Title);
+        Assert.Equal("설정", ((TextBlock)settings.FindName("SettingsHeading")).Text);
 
         foreach (var language in new[] { UiLanguage.English, UiLanguage.Korean })
         {
             app.ApplyUiLanguage(language);
             Layout(settings, settings.MinWidth, settings.MinHeight);
             Layout(translator, translator.MinWidth, translator.MinHeight);
-            Assert.Equal(language == UiLanguage.English ? "MiniTranslator Settings" : "MiniTranslator 설정", settings.Title);
+            Assert.Equal(language == UiLanguage.English ? "Settings" : "설정", ((TextBlock)settings.FindName("SettingsHeading")).Text);
+            VerifyEngineToolbar(settings);
             var saveButton = Descendants((DependencyObject)settings.Content).OfType<Button>().Single(button => button.IsDefault);
             var saveText = Descendants(saveButton).OfType<TextBlock>().Single();
             Assert.Equal(language == UiLanguage.English ? "Save" : "저장", saveText.Text);
@@ -240,7 +405,71 @@ public class WindowUxTests
         }
     }
 
-    private static void VerifyThemes(App app, TranslatorWindow translator, SettingsWindow settings,
+    private static void VerifyAppFont(App app, TranslatorWindow translator, SettingsView settings,
+        SettingsViewModel viewModel, SettingsStore store)
+    {
+        var picker = (ComboBox)settings.FindName("AppFontBox");
+        var preview = (TextBlock)settings.FindName("AppFontPreview");
+        var input = (TextBox)translator.FindName("SourceTextBox");
+        var original = input.FontFamily;
+        Assert.Equal(AppFont.System, picker.SelectedValue);
+        picker.SetCurrentValue(ComboBox.SelectedValueProperty, AppFont.Batang);
+        RefreshLayout(settings);
+        Assert.Equal(AppFont.Batang, viewModel.Font);
+        Assert.StartsWith("Batang", preview.FontFamily.Source);
+        Assert.Equal(original, input.FontFamily);
+        Assert.Equal(AppFont.System, store.Current.Font);
+
+        app.ApplyFont(viewModel.Font);
+        RefreshLayout(translator);
+        RefreshLayout(settings);
+        Assert.Equal(preview.FontFamily, input.FontFamily);
+        Assert.Equal(preview.FontFamily, picker.FontFamily);
+
+        picker.SetCurrentValue(ComboBox.SelectedValueProperty, AppFont.System);
+        app.ApplyFont(AppFont.System);
+        RefreshLayout(translator);
+        Assert.Equal(original, input.FontFamily);
+    }
+
+    private static void VerifyEngineToolbar(SettingsView window)
+    {
+        var content = (FrameworkElement)window.Content;
+        var engines = (ComboBox)window.FindName("EngineBox");
+        var help = Assert.IsType<ToggleButton>(window.FindName("EngineHelpButton"));
+        var hints = Assert.IsType<StackPanel>(window.FindName("EngineHelpPanel"));
+        foreach (var engine in new[] { TranslationEngine.Codex, TranslationEngine.Claude })
+        {
+            engines.SetCurrentValue(ComboBox.SelectedValueProperty, engine);
+            RefreshLayout(window);
+            var model = (Control)window.FindName($"{engine}ModelBox");
+            var effort = (ComboBox)window.FindName($"{engine}EffortBox");
+            var controls = new Control[] { engines, model, effort, help };
+            var rowCenter = engines.TranslatePoint(new Point(0, engines.ActualHeight / 2), content).Y;
+            foreach (var control in controls)
+            {
+                var center = control.TranslatePoint(new Point(0, control.ActualHeight / 2), content);
+                Assert.True(control.ActualWidth >= 24);
+                if (content.ActualWidth >= 500)
+                {
+                    Assert.InRange(center.Y, rowCenter - 1, rowCenter + 1);
+                }
+                Assert.InRange(center.X, 0, content.ActualWidth - control.ActualWidth);
+            }
+            if (content.ActualWidth < 500)
+            {
+                Assert.True(model.TranslatePoint(new Point(), content).Y > engines.TranslatePoint(new Point(), content).Y);
+                Assert.True(effort.TranslatePoint(new Point(), content).Y > model.TranslatePoint(new Point(), content).Y);
+            }
+            Assert.Equal(Visibility.Collapsed, hints.Visibility);
+            help.IsChecked = true;
+            RefreshLayout(window);
+            Assert.Equal(Visibility.Visible, hints.Visibility);
+            help.IsChecked = false;
+        }
+    }
+
+    private static void VerifyThemes(App app, TranslatorWindow translator, SettingsView settings,
         SettingsViewModel viewModel, SettingsStore store)
     {
         var combo = (ComboBox)settings.FindName("ThemeBox");
@@ -313,7 +542,7 @@ public class WindowUxTests
         var b = Luminance(second);
         return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
-    private static void Layout(Window window, double width, double height)
+    private static void Layout(ContentControl window, double width, double height)
     {
         window.Width = width;
         window.Height = height;
@@ -324,7 +553,7 @@ public class WindowUxTests
         RefreshLayout(window);
     }
 
-    private static void RefreshLayout(Window window)
+    private static void RefreshLayout(ContentControl window)
     {
         ((FrameworkElement)window.Content).UpdateLayout();
     }

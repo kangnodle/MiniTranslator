@@ -26,6 +26,15 @@ public class SettingsMapperTests
     }
 
     [Theory]
+    [InlineData(null)]
+    [InlineData("unknown")]
+    [InlineData("99")]
+    public void Older_or_unknown_font_settings_use_the_system_font(string? value)
+    {
+        Assert.Equal(AppFont.System, SettingsMapper.FromDocument(new SettingsDocument { Font = value }).Font);
+    }
+
+    [Theory]
     [InlineData("Korean", UiLanguage.Korean)]
     [InlineData("english", UiLanguage.English)]
     [InlineData(null, UiLanguage.Korean)]
@@ -115,7 +124,7 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
     public async Task Saves_and_loads(AppTheme theme)
     {
         var repository = new JsonSettingsRepository(_paths);
-        var settings = AppSettings.Default with { Languages = LanguagePair.Default.Swap().Value, Theme = theme, UiLanguage = UiLanguage.English };
+        var settings = AppSettings.Default with { Languages = LanguagePair.Default.Swap().Value, Theme = theme, UiLanguage = UiLanguage.English, Font = AppFont.Batang };
 
         var saved = await repository.SaveAsync(settings);
         var loaded = await repository.LoadAsync();

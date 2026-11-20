@@ -15,6 +15,7 @@ public class AppSettingsTests
             Hotkey = HotkeyGesture.Parse("Ctrl+Alt+T").Value,
             Languages = LanguagePair.Create("ja", "en").Value,
             UiLanguage = UiLanguage.English,
+            Font = AppFont.Batang,
             Theme = AppTheme.Dark,
             Behavior = new(false, false),
         };
@@ -35,6 +36,7 @@ public class AppSettingsTests
             Hotkey = HotkeyGesture.Parse("Ctrl+Alt+T").Value,
             Languages = LanguagePair.Create("en", "ja").Value,
             UiLanguage = UiLanguage.English,
+            Font = AppFont.Gulim,
             Theme = AppTheme.Light,
             Behavior = new(true, false),
         };
@@ -44,6 +46,7 @@ public class AppSettingsTests
         Assert.Equal(draft.Hotkey, merged.Hotkey);
         Assert.Equal(draft.Languages, merged.Languages);
         Assert.Equal(draft.UiLanguage, merged.UiLanguage);
+        Assert.Equal(draft.Font, merged.Font);
         Assert.Equal(AppTheme.Dark, merged.Theme);
         Assert.Equal(new BehaviorSettings(false, false), merged.Behavior);
         Assert.Equal(new BehaviorSettings(false, true), current.Behavior);
@@ -56,6 +59,15 @@ public class AppSettingsTests
             AppSettings.Default with { UiLanguage = (UiLanguage)99 }, AppSettings.Default);
 
         Assert.Equal(SettingsErrors.InvalidUiLanguage, result.Error);
+    }
+
+    [Fact]
+    public void An_invalid_font_is_rejected()
+    {
+        var result = AppSettings.Default.MergeDraft(
+            AppSettings.Default with { Font = (AppFont)99 }, AppSettings.Default);
+
+        Assert.Equal(SettingsErrors.InvalidFont, result.Error);
     }
 
     [Fact]

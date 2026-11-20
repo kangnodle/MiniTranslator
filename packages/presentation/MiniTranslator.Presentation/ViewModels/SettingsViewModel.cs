@@ -29,6 +29,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         var current = editor.Original;
         _theme = current.Theme;
         _uiLanguage = current.UiLanguage;
+        _font = current.Font;
         _engine = current.Engine;
         _codexExecutablePath = current.CodexExecutablePath;
         _claudeModel = current.Claude.Model;
@@ -192,6 +193,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private UiLanguage _uiLanguage;
 
     [ObservableProperty]
+    private AppFont _font;
+
+    [ObservableProperty]
     private TranslationEngine _engine;
 
     [ObservableProperty]
@@ -323,6 +327,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             new BehaviorSettings(CaptureSelectionOnHotkey, HideOnDeactivate, AutoTranslateOnCapture))
         {
             UiLanguage = UiLanguage,
+            Font = Font,
             Engine = Engine,
             CodexExecutablePath = CodexExecutablePath ?? string.Empty,
             Claude = EngineOptions.Create(ClaudeModel, ClaudeEffort),

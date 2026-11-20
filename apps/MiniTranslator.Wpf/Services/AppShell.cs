@@ -22,7 +22,6 @@ internal sealed class AppShell(
 {
     private TaskbarIcon? _tray;
     private TranslatorWindow? _translatorWindow;
-    private SettingsWindow? _settingsWindow;
     private bool _handlingHotkey;
 
     public void Start()
@@ -61,22 +60,7 @@ internal sealed class AppShell(
         TranslatorWindow.ShowCentered();
     }
 
-    public void ShowSettings()
-    {
-        if (_settingsWindow is null)
-        {
-            _settingsWindow = new SettingsWindow(createSettingsViewModel());
-            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        }
-
-        _settingsWindow.Show();
-        if (_settingsWindow.WindowState == WindowState.Minimized)
-        {
-            _settingsWindow.WindowState = WindowState.Normal;
-        }
-
-        _settingsWindow.Activate();
-    }
+    public void ShowSettings() => TranslatorWindow.ShowSettings(createSettingsViewModel);
 
     public void Dispose()
     {
@@ -135,6 +119,7 @@ internal sealed class AppShell(
     private TaskbarIcon CreateTrayIcon()
     {
         var menu = new ContextMenu();
+        menu.SetResourceReference(Control.FontFamilyProperty, "AppFontFamily");
         menu.Items.Add(CreateMenuItem("OpenTranslator", "", () => ShowTranslator()));
         menu.Items.Add(CreateMenuItem("Settings", "", ShowSettings));
         menu.Items.Add(new Separator());

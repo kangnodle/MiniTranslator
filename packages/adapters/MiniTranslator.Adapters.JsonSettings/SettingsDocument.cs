@@ -13,6 +13,8 @@ internal sealed class SettingsDocument
     public string? Theme { get; set; }
     public string? UiLanguage { get; set; }
 
+    public string? Font { get; set; }
+
     public string? Engine { get; set; }
 
     public string? CodexExecutablePath { get; set; }

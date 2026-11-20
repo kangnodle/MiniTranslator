@@ -160,10 +160,12 @@ public class SettingsViewModelTests
 
         vm.RecordHotkeyCommand.Execute(new KeyChord(HotkeyModifiers.Control | HotkeyModifiers.Alt, T));
         vm.HideOnDeactivate = false;
+        vm.Font = AppFont.Gulim;
         await vm.SaveCommand.ExecuteAsync(null);
 
         var expected = HotkeyGesture.Create(HotkeyModifiers.Control | HotkeyModifiers.Alt, T).Value;
         Assert.True(closed);
+        Assert.Equal(AppFont.Gulim, repository.Saved?.Font);
         Assert.Equal(expected, hotkey.Registered);
         Assert.Equal(expected, repository.Saved?.Hotkey);
         Assert.False(repository.Saved?.Behavior.HideOnDeactivate);

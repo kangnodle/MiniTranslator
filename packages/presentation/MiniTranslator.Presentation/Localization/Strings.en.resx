@@ -7,6 +7,12 @@
   <data name="SettingsHint" xml:space="preserve"><value>Theme changes are saved immediately. Other changes apply when you select Save.</value></data>
   <data name="Appearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="Theme" xml:space="preserve"><value>App theme</value></data>
+  <data name="AppFontLabel" xml:space="preserve"><value>App font</value></data>
+  <data name="SystemFont" xml:space="preserve"><value>System default</value></data>
+  <data name="MalgunGothic" xml:space="preserve"><value>Malgun Gothic</value></data>
+  <data name="Batang" xml:space="preserve"><value>Batang</value></data>
+  <data name="Gulim" xml:space="preserve"><value>Gulim</value></data>
+  <data name="Settings.InvalidFont" xml:space="preserve"><value>Select a valid app font.</value></data>
   <data name="ThemeHint" xml:space="preserve"><value>Applies to all windows immediately. System follows the Windows light or dark theme.</value></data>
   <data name="System" xml:space="preserve"><value>System</value></data>
   <data name="Light" xml:space="preserve"><value>Light</value></data>
@@ -42,6 +48,7 @@
   <data name="HideOnDeactivateHint" xml:space="preserve"><value>Hides the translator when you click outside the window.</value></data>
   <data name="Save" xml:space="preserve"><value>Save</value></data>
   <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Back" xml:space="preserve"><value>Back</value></data>
   <data name="Translate" xml:space="preserve"><value>Translate</value></data>
   <data name="SettingsShortcut" xml:space="preserve"><value>Settings (Ctrl+,)</value></data>
   <data name="SwapLanguagesShortcut" xml:space="preserve"><value>Swap languages (Ctrl+Shift+S)</value></data>
@@ -103,9 +110,9 @@ Look for its icon in the system tray.</value></data>
   <data name="Startup.InvalidExecutable" xml:space="preserve"><value>Could not register startup. Run the installed MiniTranslator.exe and keep its full path within 258 characters.</value></data>
   <data name="AllRightsReserved" xml:space="preserve"><value>All rights reserved.</value></data>
   <data name="TranslationEngine" xml:space="preserve"><value>Translation engine</value></data>
-  <data name="TranslationEngineHint" xml:space="preserve"><value>Claude and Codex translate through Claude Code or the Codex CLI, which must be installed and signed in. A translation takes about 1–3 seconds.</value></data>
-  <data name="EngineClaude" xml:space="preserve"><value>Claude (uses your Claude Code sign-in)</value></data>
-  <data name="EngineCodex" xml:space="preserve"><value>Codex (uses your ChatGPT sign-in)</value></data>
+  <data name="TranslationEngineHint" xml:space="preserve"><value>Claude uses your Claude Code sign-in. Codex uses your ChatGPT sign-in. Install and sign in to the corresponding CLI. A translation takes about 1–3 seconds.</value></data>
+  <data name="EngineHelp" xml:space="preserve"><value>Translation settings help</value></data>
+  <data name="CliDefault" xml:space="preserve"><value>CLI default</value></data>
   <data name="EngineModel" xml:space="preserve"><value>Model</value></data>
   <data name="ClaudeModelHint" xml:space="preserve"><value>Leave empty to use sonnet. Enter an alias such as opus or haiku, or a full model name.</value></data>
   <data name="CodexModelHint" xml:space="preserve"><value>Leave empty to use gpt-6.1-terra. Enter any model name available in Codex.</value></data>
