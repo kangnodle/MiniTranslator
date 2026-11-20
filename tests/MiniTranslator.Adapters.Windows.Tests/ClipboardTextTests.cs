@@ -56,6 +56,55 @@ public class ClipboardTextTests
     public void An_invalid_clipboard_handle_has_no_text() => Assert.Null(WpfClipboard.ReadUnicodeText(0));
 
     [Fact]
+    public void Oversized_unicode_buffers_are_rejected()
+    {
+        var memory = WpfClipboard.AllocateText(new string('a', 33));
+        try
+        {
+            Assert.NotEqual(nint.Zero, memory);
+            Assert.Null(WpfClipboard.ReadUnicodeText(memory, maxLength: 32));
+            Assert.Equal(new string('a', 33), WpfClipboard.ReadUnicodeText(memory, maxLength: 33));
+        }
+        finally
+        {
+            NativeMethods.GlobalFree(memory);
+        }
+    }
+
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(1u)]
+    [InlineData(42u)]
+    public void Native_dword_reader_round_trips_allocated_values(uint value)
+    {
+        var memory = WpfClipboard.AllocateDword(value);
+        try
+        {
+            Assert.Equal(value, WpfClipboard.ReadDword(memory));
+        }
+        finally
+        {
+            NativeMethods.GlobalFree(memory);
+        }
+    }
+
+    [Fact]
+    public void Native_dword_reader_rejects_null_and_undersized_buffers()
+    {
+        Assert.Null(WpfClipboard.ReadDword(0));
+
+        var small = NativeMethods.GlobalAlloc(0x0002, 2);
+        try
+        {
+            Assert.Null(WpfClipboard.ReadDword(small));
+        }
+        finally
+        {
+            NativeMethods.GlobalFree(small);
+        }
+    }
+
+    [Fact]
     public void Native_dword_buffer_round_trips()
     {
         var memory = WpfClipboard.AllocateDword(0);

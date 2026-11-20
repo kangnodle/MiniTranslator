@@ -24,10 +24,20 @@ function Invoke-WebRequest {
     $script:downloadPath = $OutFile
     if ($script:scenario -eq 'download-failure') { throw 'Network unavailable.' }
     [IO.File]::WriteAllText($OutFile, 'runtime installer fixture')
+    if ($script:scenario -eq 'planted-dll') {
+        [IO.File]::WriteAllText((Join-Path (Split-Path -Parent $OutFile) 'version.dll'), 'planted')
+    }
+    if ($script:scenario -eq 'missing-final-uri') {
+        return [pscustomobject]@{ BaseResponse = $null }
+    }
     $finalUri = switch ($script:scenario) {
-        'downgrade-redirect' { 'http://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-x64.exe' }
+        'downgrade-redirect' { "http://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-$script:architecture.exe" }
         'untrusted-redirect' { 'https://example.org/windowsdesktop-runtime.exe' }
-        default { 'https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-x64.exe' }
+        'wrong-arch-redirect' {
+            $other = if ($script:architecture -eq 'x64') { 'arm64' } else { 'x64' }
+            "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-$other.exe"
+        }
+        default { "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-$script:architecture.exe" }
     }
     if ($PassThru) {
         [pscustomobject]@{
@@ -60,10 +70,28 @@ function Get-RuntimeInstallerMetadata {
             FileDescription = 'Unrelated Microsoft Tool'
         }
     }
+    if ($script:scenario -eq 'downgrade-version') {
+        return [pscustomobject]@{
+            CompanyName = 'Microsoft Corporation'
+            ProductMajorPart = 8
+            ProductName = 'Microsoft Windows Desktop Runtime - 8.0.10'
+            FileDescription = 'Microsoft Windows Desktop Runtime - 8.0.10'
+        }
+    }
+    if ($script:scenario -eq 'wrong-arch-metadata') {
+        $other = if ($script:architecture -eq 'x64') { 'arm64' } else { 'x64' }
+        return [pscustomobject]@{
+            CompanyName = 'Microsoft Corporation'
+            ProductMajorPart = 11
+            ProductName = "Microsoft Windows Desktop Runtime - 11.0.1 ($other)"
+            FileDescription = "Microsoft Windows Desktop Runtime - 11.0.1 ($other)"
+        }
+    }
     [pscustomobject]@{
         CompanyName = 'Microsoft Corporation'
-        ProductName = 'Microsoft Windows Desktop Runtime - 11.0.1'
-        FileDescription = 'Microsoft Windows Desktop Runtime - 11.0.1'
+        ProductMajorPart = 11
+        ProductName = "Microsoft Windows Desktop Runtime - 11.0.1 ($script:architecture)"
+        FileDescription = "Microsoft Windows Desktop Runtime - 11.0.1 ($script:architecture)"
     }
 }
 
@@ -79,11 +107,23 @@ function Start-Process {
         $probe = [IO.File]::Open($FilePath, [IO.FileMode]::Open, [IO.FileAccess]::Write, [IO.FileShare]::None)
         $probe.Dispose()
     }
-    catch [IO.IOException] {
+    catch [IO.IOException], [UnauthorizedAccessException] {
         $lockedAgainstWrite = $true
     }
     if (-not $lockedAgainstWrite) {
         throw 'Runtime installer was not write-locked across verification and execution.'
+    }
+    $directoryLockedAgainstDllPlant = $false
+    $probeDll = Join-Path (Split-Path -Parent $FilePath) 'probe.dll'
+    try {
+        [IO.File]::WriteAllText($probeDll, 'test')
+        Remove-Item -LiteralPath $probeDll -Force
+    }
+    catch [UnauthorizedAccessException] {
+        $directoryLockedAgainstDllPlant = $true
+    }
+    if (-not $directoryLockedAgainstDllPlant) {
+        throw 'Runtime download directory was not locked against sibling file creation before elevation.'
     }
     if ($script:scenario -eq 'elevation-cancelled') { throw 'Elevation cancelled.' }
     if ($script:scenario -eq 'installer-failure') { return [pscustomobject]@{ ExitCode = 1603 } }
@@ -108,7 +148,7 @@ foreach ($script:architecture in @('x64', 'arm64')) {
     $script:installedVersions = @{ "$script:architecture/Microsoft.WindowsDesktop.App" = @('11.0.0') }
     if (Test-DesktopRuntimeInstalled $script:architecture) { throw 'Accepted a missing core runtime.' }
 
-    foreach ($script:scenario in @('already-installed', 'install', 'restart-required', 'download-failure', 'downgrade-redirect', 'untrusted-redirect', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product', 'elevation-cancelled', 'installer-failure', 'runtime-still-missing')) {
+    foreach ($script:scenario in @('already-installed', 'install', 'restart-required', 'download-failure', 'missing-final-uri', 'downgrade-redirect', 'untrusted-redirect', 'wrong-arch-redirect', 'planted-dll', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product', 'downgrade-version', 'wrong-arch-metadata', 'elevation-cancelled', 'installer-failure', 'runtime-still-missing')) {
         $script:installedVersions = @{}
         $script:downloadPath = $null
         $script:downloadUri = $null
@@ -133,7 +173,7 @@ foreach ($script:architecture in @('x64', 'arm64')) {
             if ($script:downloadUri -ne "https://aka.ms/dotnet/11.0/windowsdesktop-runtime-win-$script:architecture.exe") { throw 'Incorrect runtime download URL.' }
             if (Test-Path -LiteralPath (Split-Path -Parent $script:downloadPath)) { throw 'Runtime download directory was not removed.' }
         }
-        if ($script:scenario -in @('download-failure', 'downgrade-redirect', 'untrusted-redirect', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product') -and $script:installationStarted) {
+        if ($script:scenario -in @('download-failure', 'missing-final-uri', 'downgrade-redirect', 'untrusted-redirect', 'wrong-arch-redirect', 'planted-dll', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product', 'downgrade-version', 'wrong-arch-metadata') -and $script:installationStarted) {
             throw 'Executed an untrusted or incomplete download.'
         }
     }

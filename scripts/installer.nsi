@@ -29,6 +29,8 @@ LangString RuntimeSetup ${LANG_KOREAN} ".NET 11 Desktop Runtime을 확인합니�
 LangString RuntimeSetup ${LANG_ENGLISH} "Checking .NET 11 Desktop Runtime. If missing, it will be downloaded and installed. Approve the Windows administrator prompt if requested."
 LangString RuntimeFailure ${LANG_KOREAN} ".NET 11 Desktop Runtime을 준비하지 못했습니다. 인터넷 연결과 관리자 권한 요청 승인 여부를 확인한 뒤 다시 설치하세요. 자세한 오류는 설치 내역에서 확인할 수 있습니다."
 LangString RuntimeFailure ${LANG_ENGLISH} "Could not prepare .NET 11 Desktop Runtime. Check your internet connection and approve the administrator prompt, then retry. See the installation details for the error."
+LangString RemoveUserData ${LANG_KOREAN} "저장된 설정과 Codex 로그인 정보도 함께 삭제할까요?"
+LangString RemoveUserData ${LANG_ENGLISH} "Also remove saved settings and Codex sign-in credentials?"
 
 Function .onInit
 !if "${APP_RUNTIME}" == "win-arm64"
@@ -99,4 +101,8 @@ Section "Uninstall"
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "MiniTranslator"
     DeleteRegKey HKCU "${UNINSTALL_KEY}"
     RMDir "$INSTDIR"
+    MessageBox MB_YESNO|MB_ICONQUESTION "$(RemoveUserData)" /SD IDNO IDNO skip_user_data
+    RMDir /r "$LOCALAPPDATA\MiniTranslator"
+    RMDir /r "$APPDATA\MiniTranslator"
+    skip_user_data:
 SectionEnd

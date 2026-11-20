@@ -9,58 +9,121 @@ internal sealed class ClaudeProcess : IClaudeProcess
 {
     internal const int MaxLineLength = 2 * 1024 * 1024;
 
-    private readonly Process _process;
+    private static readonly HashSet<string> AllowedEnvironmentVariables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "SystemRoot",
+        "WINDIR",
+        "SystemDrive",
+        "COMSPEC",
+        "PATHEXT",
+        "PATH",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "ProgramW6432",
+        "CommonProgramFiles",
+        "CommonProgramFiles(x86)",
+        "CommonProgramW6432",
+        "ProgramData",
+        "USERPROFILE",
+        "HOME",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "USERNAME",
+        "USERDOMAIN",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "PUBLIC",
+        "TEMP",
+        "TMP",
+        "NUMBER_OF_PROCESSORS",
+        "PROCESSOR_ARCHITECTURE",
+        "PROCESSOR_IDENTIFIER",
+        "OS",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TERM",
+        "ANTHROPIC_API_KEY",
+    };
 
-    private ClaudeProcess(Process process) => _process = process;
+    private readonly Process _process;
+    private readonly string _sessionWorkingDirectory;
+
+    private ClaudeProcess(Process process, string sessionWorkingDirectory)
+    {
+        _process = process;
+        _sessionWorkingDirectory = sessionWorkingDirectory;
+    }
 
     public static ClaudeProcess Start(EngineOptions options)
     {
         var executable = ResolveExecutableFromPath(ClaudeCliProtocol.Executable)
             ?? throw new Win32Exception(2, "The Claude Code CLI was not found on PATH.");
-        var workingDirectory = EnsureSandboxWorkingDirectory();
+        var workingDirectory = CreateSessionWorkingDirectory();
 
-        var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-        var startInfo = new ProcessStartInfo(executable)
+        try
         {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardInputEncoding = utf8,
-            StandardOutputEncoding = utf8,
-            StandardErrorEncoding = utf8,
-            WorkingDirectory = workingDirectory,
-        };
+            var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+            var startInfo = new ProcessStartInfo(executable)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardInputEncoding = utf8,
+                StandardOutputEncoding = utf8,
+                StandardErrorEncoding = utf8,
+                WorkingDirectory = workingDirectory,
+            };
 
-        foreach (var argument in ClaudeCliProtocol.Arguments(options))
-        {
-            startInfo.ArgumentList.Add(argument);
+            foreach (var argument in ClaudeCliProtocol.Arguments(options))
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
+
+            SanitizeEnvironment(startInfo.Environment);
+
+            var process = Process.Start(startInfo) ?? throw new Win32Exception("The Claude Code CLI did not start.");
+
+            _ = DrainStreamAsync(process.StandardError.BaseStream);
+
+            return new ClaudeProcess(process, workingDirectory);
         }
-
-        var process = Process.Start(startInfo) ?? throw new Win32Exception("The Claude Code CLI did not start.");
-
-        process.ErrorDataReceived += static (_, _) => { };
-        process.BeginErrorReadLine();
-
-        return new ClaudeProcess(process);
+        catch
+        {
+            TryDeleteSessionDirectory(workingDirectory);
+            throw;
+        }
     }
 
-    internal static string? ResolveExecutableFromPath(string name)
+    internal static bool IsAllowedEnvironmentVariable(string name) =>
+        AllowedEnvironmentVariables.Contains(name);
+
+    internal static void SanitizeEnvironment(IDictionary<string, string?> environment)
     {
-        var pathValue = Environment.GetEnvironmentVariable("PATH");
+        foreach (var key in environment.Keys.Where(key => !IsAllowedEnvironmentVariable(key)).ToList())
+        {
+            environment.Remove(key);
+        }
+    }
+
+    internal static string? ResolveExecutableFromPath(string name) =>
+        ResolveExecutableFromPath(name, Environment.GetEnvironmentVariable("PATH"), Path.PathSeparator == ';');
+
+    internal static string? ResolveExecutableFromPath(string name, string? pathValue, bool isWindows)
+    {
         if (string.IsNullOrWhiteSpace(pathValue))
         {
             return null;
         }
 
-        var isWindows = Path.PathSeparator == ';';
-        string[] candidates = isWindows ? [$"{name}.exe", $"{name}.com", name] : [name];
+        string[] candidates = isWindows ? [$"{name}.exe", $"{name}.com"] : [name];
 
         foreach (var rawEntry in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var entry = rawEntry.Trim('"');
-            if (entry.Length == 0 || !Path.IsPathFullyQualified(entry) || entry.StartsWith(@"\\", StringComparison.Ordinal))
+            if (!IsSafePathDirectory(entry, isWindows))
             {
                 continue;
             }
@@ -68,7 +131,7 @@ internal sealed class ClaudeProcess : IClaudeProcess
             foreach (var candidate in candidates)
             {
                 var fullPath = Path.Combine(entry, candidate);
-                if (File.Exists(fullPath))
+                if (IsSafeLocalExecutable(fullPath, isWindows))
                 {
                     return fullPath;
                 }
@@ -78,11 +141,176 @@ internal sealed class ClaudeProcess : IClaudeProcess
         return null;
     }
 
+    internal static bool IsSafePathDirectory(string entry, bool isWindows)
+    {
+        if (entry.Length == 0 || !Path.IsPathFullyQualified(entry))
+        {
+            return false;
+        }
+
+        if (entry.Length >= 2 && IsDirectorySeparator(entry[0]) && IsDirectorySeparator(entry[1]))
+        {
+            return false;
+        }
+
+        if (!isWindows)
+        {
+            return true;
+        }
+
+        if (entry.Length < 3
+            || !char.IsAsciiLetter(entry[0])
+            || entry[1] != ':'
+            || !IsDirectorySeparator(entry[2])
+            || entry.AsSpan(2).Contains(':'))
+        {
+            return false;
+        }
+
+        return IsLocalDrive(entry);
+    }
+
+    internal static bool IsSafeLocalExecutable(string fullPath, bool isWindows)
+    {
+        if (!IsSafePathDirectory(fullPath, isWindows) || !File.Exists(fullPath))
+        {
+            return false;
+        }
+
+        try
+        {
+            if (File.ResolveLinkTarget(fullPath, returnFinalTarget: true) is { } target)
+            {
+                var targetPath = target.FullName;
+                if (!IsSafePathDirectory(targetPath, isWindows))
+                {
+                    return false;
+                }
+
+                if (isWindows && !HasAllowedWindowsExtension(targetPath))
+                {
+                    return false;
+                }
+            }
+
+            return AreParentDirectoriesSafe(fullPath, isWindows);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return false;
+        }
+    }
+
     internal static string EnsureSandboxWorkingDirectory()
     {
-        var directory = Path.Combine(Path.GetTempPath(), "MiniTranslator.Work");
-        Directory.CreateDirectory(directory);
+        var baseRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrWhiteSpace(baseRoot))
+        {
+            baseRoot = Path.GetTempPath();
+        }
+
+        var appRoot = Path.Combine(baseRoot, "MiniTranslator");
+        EnsureNonReparsePointDirectory(appRoot);
+
+        var directory = Path.Combine(appRoot, "work");
+        EnsureNonReparsePointDirectory(directory);
         return directory;
+    }
+
+    internal static string CreateSessionWorkingDirectory()
+    {
+        var root = EnsureSandboxWorkingDirectory();
+        var sessionDirectory = Path.Combine(root, Guid.NewGuid().ToString("N"));
+        EnsureNonReparsePointDirectory(sessionDirectory);
+        return sessionDirectory;
+    }
+
+    private static void EnsureNonReparsePointDirectory(string path)
+    {
+        if (Directory.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new IOException("Sandbox directory cannot be a reparse point.");
+        }
+
+        Directory.CreateDirectory(path);
+
+        if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new IOException("Sandbox directory cannot be a reparse point.");
+        }
+    }
+
+    private static bool AreParentDirectoriesSafe(string fullPath, bool isWindows)
+    {
+        var current = Path.GetDirectoryName(fullPath);
+        while (!string.IsNullOrEmpty(current))
+        {
+            if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+            {
+                if (Directory.ResolveLinkTarget(current, returnFinalTarget: true) is not { } target
+                    || !IsSafePathDirectory(target.FullName, isWindows))
+                {
+                    return false;
+                }
+            }
+
+            var parent = Path.GetDirectoryName(current);
+            if (string.Equals(parent, current, StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            current = parent;
+        }
+
+        return true;
+    }
+
+    private static bool IsLocalDrive(string path)
+    {
+        try
+        {
+            var drive = new DriveInfo(path[..1]);
+            return drive.DriveType != DriveType.Network;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException)
+        {
+            return false;
+        }
+    }
+
+    private static bool HasAllowedWindowsExtension(string path) =>
+        path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+        || path.EndsWith(".com", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsDirectorySeparator(char ch) => ch is '\\' or '/';
+
+    private static async Task DrainStreamAsync(Stream stream)
+    {
+        var buffer = new byte[4096];
+        try
+        {
+            while (await stream.ReadAsync(buffer).ConfigureAwait(false) > 0)
+            {
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+        }
+    }
+
+    private static void TryDeleteSessionDirectory(string directory)
+    {
+        try
+        {
+            if (Directory.Exists(directory) && (File.GetAttributes(directory) & FileAttributes.ReparsePoint) == 0)
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
     }
 
     public async Task WriteLineAsync(string line, CancellationToken cancellationToken)
@@ -138,6 +366,7 @@ internal sealed class ClaudeProcess : IClaudeProcess
     {
         Kill();
         _process.Dispose();
+        TryDeleteSessionDirectory(_sessionWorkingDirectory);
     }
 
     private void Kill()

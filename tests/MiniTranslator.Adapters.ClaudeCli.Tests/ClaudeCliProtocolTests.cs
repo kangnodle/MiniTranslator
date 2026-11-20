@@ -168,6 +168,82 @@ public class ClaudeCliProtocolTests
     {
         Assert.Null(ClaudeCliProtocol.TryParseDelta(line));
     }
+
+    [Theory]
+    [InlineData(@"\\attacker\share")]
+    [InlineData("//attacker/share")]
+    [InlineData(@"/\attacker/share")]
+    [InlineData(@"\/attacker/share")]
+    [InlineData(@"C:\Tools\dir:stream")]
+    [InlineData("relative")]
+    [InlineData("")]
+    public void Unsafe_path_directories_are_rejected(string entry)
+    {
+        Assert.False(ClaudeProcess.IsSafePathDirectory(entry, isWindows: true));
+    }
+
+    [Fact]
+    public void Path_resolution_skips_extensionless_shims_on_windows_and_finds_exe_later_on_path()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "MiniTranslator.ClaudePathTests", Guid.NewGuid().ToString("N"));
+        var first = Path.Combine(root, "first");
+        var second = Path.Combine(root, "second");
+        Directory.CreateDirectory(first);
+        Directory.CreateDirectory(second);
+        try
+        {
+            File.WriteAllText(Path.Combine(first, "claude"), "#!/bin/sh");
+            var expected = Path.Combine(second, "claude.exe");
+            File.WriteAllText(expected, string.Empty);
+
+            var resolved = ClaudeProcess.ResolveExecutableFromPath("claude", $"//attacker/share;{first};{second}", isWindows: true);
+
+            Assert.Equal(expected, resolved);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Environment_sanitization_keeps_allowed_variables_and_drops_overrides()
+    {
+        var environment = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["PATH"] = @"C:\Windows\System32",
+            ["SystemRoot"] = @"C:\Windows",
+            ["ANTHROPIC_API_KEY"] = "sk-test",
+            ["ANTHROPIC_BASE_URL"] = "https://attacker.example",
+            ["ANTHROPIC_CUSTOM_HEADERS"] = "X-Test: 1",
+            ["CLAUDE_CONFIG_DIR"] = @"C:\evil",
+            ["NODE_OPTIONS"] = "--require evil.js",
+            ["NODE_TLS_REJECT_UNAUTHORIZED"] = "0",
+            ["HTTPS_PROXY"] = "http://proxy.example:8080",
+        };
+
+        ClaudeProcess.SanitizeEnvironment(environment);
+
+        Assert.True(environment.ContainsKey("PATH"));
+        Assert.True(environment.ContainsKey("SystemRoot"));
+        Assert.True(environment.ContainsKey("ANTHROPIC_API_KEY"));
+        Assert.False(environment.ContainsKey("ANTHROPIC_BASE_URL"));
+        Assert.False(environment.ContainsKey("ANTHROPIC_CUSTOM_HEADERS"));
+        Assert.False(environment.ContainsKey("CLAUDE_CONFIG_DIR"));
+        Assert.False(environment.ContainsKey("NODE_OPTIONS"));
+        Assert.False(environment.ContainsKey("NODE_TLS_REJECT_UNAUTHORIZED"));
+        Assert.False(environment.ContainsKey("HTTPS_PROXY"));
+    }
+
+    [Fact]
+    public void Sandbox_working_directory_lives_under_local_appdata()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrWhiteSpace(localAppData))
+        {
+            Assert.StartsWith(localAppData, ClaudeProcess.EnsureSandboxWorkingDirectory(), StringComparison.OrdinalIgnoreCase);
+        }
+    }
 }
 
 file static class ListExtensions

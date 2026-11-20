@@ -19,21 +19,26 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 
     public async Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(paths.SettingsFile))
+        if (!Directory.Exists(paths.Root) || !File.Exists(paths.SettingsFile))
         {
             return AppSettings.Default;
         }
 
         try
         {
-            var info = new FileInfo(paths.SettingsFile);
-            if ((info.Attributes & FileAttributes.ReparsePoint) != 0 || info.Length > MaxSettingsFileBytes)
+            if (IsReparsePoint(paths.Root) || IsReparsePoint(paths.SettingsFile))
             {
                 return AppSettings.Default;
             }
 
-            await using var stream = File.OpenRead(paths.SettingsFile);
-            var document = await JsonSerializer.DeserializeAsync(stream, JsonContext.SettingsDocument, cancellationToken);
+            await using var stream = new FileStream(paths.SettingsFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var bytes = await ReadBoundedBytesAsync(stream, (int)MaxSettingsFileBytes, cancellationToken);
+            if (bytes is null)
+            {
+                return AppSettings.Default;
+            }
+
+            var document = JsonSerializer.Deserialize(bytes, JsonContext.SettingsDocument);
             return SettingsMapper.FromDocument(document);
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -49,10 +54,15 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 
         try
         {
+            if (Directory.Exists(paths.Root) && IsReparsePoint(paths.Root))
+            {
+                return SettingsErrors.SaveFailed("Settings path cannot be a reparse point.");
+            }
+
             Directory.CreateDirectory(paths.Root);
 
-            if ((File.GetAttributes(paths.Root) & FileAttributes.ReparsePoint) != 0
-                || (File.Exists(paths.SettingsFile) && (File.GetAttributes(paths.SettingsFile) & FileAttributes.ReparsePoint) != 0))
+            if (IsReparsePoint(paths.Root)
+                || (File.Exists(paths.SettingsFile) && IsReparsePoint(paths.SettingsFile)))
             {
                 return SettingsErrors.SaveFailed("Settings path cannot be a reparse point.");
             }
@@ -60,6 +70,12 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
             await using (var stream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 await JsonSerializer.SerializeAsync(stream, document, JsonContext.SettingsDocument, cancellationToken);
+            }
+
+            if (File.Exists(paths.SettingsFile) && IsReparsePoint(paths.SettingsFile))
+            {
+                TryDeleteTemp(tempFile);
+                return SettingsErrors.SaveFailed("Settings path cannot be a reparse point.");
             }
 
             File.Move(tempFile, paths.SettingsFile, overwrite: true);
@@ -74,6 +90,35 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
         {
             TryDeleteTemp(tempFile);
             throw;
+        }
+    }
+
+    private static bool IsReparsePoint(string path) =>
+        (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+
+    private static async Task<byte[]?> ReadBoundedBytesAsync(Stream stream, int maxBytes, CancellationToken cancellationToken)
+    {
+        using var buffer = new MemoryStream();
+        var chunk = new byte[4096];
+        var total = 0;
+
+        while (true)
+        {
+            var remaining = maxBytes - total + 1;
+            var toRead = Math.Min(chunk.Length, remaining);
+            var read = await stream.ReadAsync(chunk.AsMemory(0, toRead), cancellationToken);
+            if (read == 0)
+            {
+                return buffer.ToArray();
+            }
+
+            total += read;
+            if (total > maxBytes)
+            {
+                return null;
+            }
+
+            buffer.Write(chunk, 0, read);
         }
     }
 

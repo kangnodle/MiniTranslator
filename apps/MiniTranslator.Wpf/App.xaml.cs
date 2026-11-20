@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
 using System.Windows;
 using System.Windows.Markup;
 using System.Windows.Media;
@@ -10,8 +13,6 @@ namespace MiniTranslator.Wpf;
 
 public partial class App : System.Windows.Application
 {
-    private const string SingleInstanceMutexName = @"Local\MiniTranslator.SingleInstance";
-
     private Mutex? _singleInstance;
     private AppContainer? _container;
     private UiLanguage? _uiLanguage;
@@ -36,11 +37,9 @@ public partial class App : System.Windows.Application
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
-        _singleInstance = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
+        var isFirstInstance = TryAcquireSingleInstanceMutex();
         if (!isFirstInstance)
         {
-            _singleInstance.Dispose();
-            _singleInstance = null;
             var fallbackLanguage = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("en", StringComparison.OrdinalIgnoreCase)
                 ? UiLanguage.English
                 : UiLanguage.Korean;
@@ -155,6 +154,34 @@ public partial class App : System.Windows.Application
         }
 
         base.OnExit(e);
+    }
+
+    private bool TryAcquireSingleInstanceMutex()
+    {
+        var mutexName = BuildSingleInstanceMutexName();
+        try
+        {
+            var mutex = new Mutex(initiallyOwned: true, mutexName, out var isFirstInstance);
+            if (!isFirstInstance)
+            {
+                mutex.Dispose();
+                return false;
+            }
+
+            _singleInstance = mutex;
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static string BuildSingleInstanceMutexName()
+    {
+        var identity = WindowsIdentity.GetCurrent().User?.Value ?? Environment.UserName;
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"MiniTranslator:{identity}"));
+        return $@"Local\MiniTranslator.SingleInstance.{Convert.ToHexString(hash.AsSpan(0, 8))}";
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

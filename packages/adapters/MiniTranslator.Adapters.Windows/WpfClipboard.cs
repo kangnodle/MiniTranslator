@@ -14,6 +14,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
     internal const string CanIncludeInHistoryFormat = "CanIncludeInClipboardHistory";
     internal const string CanUploadToCloudFormat = "CanUploadToCloudClipboard";
     internal const string ClipboardViewerIgnoreFormat = "Clipboard Viewer Ignore";
+    internal const int MaxCapturedTextLength = 65_536;
 
     private const uint UnicodeText = 13;
     private const int Attempts = 5;
@@ -109,6 +110,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         }
 
         string? selected = null;
+        var restoreBackup = false;
         try
         {
             NativeMethods.GetWindowThreadProcessId(NativeMethods.GetClipboardOwner(), out var ownerProcessId);
@@ -118,10 +120,15 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
                 return null;
             }
 
-            selected = ReadUnicodeText(NativeMethods.GetClipboardData(UnicodeText));
-            if (selected is null || NativeMethods.GetForegroundWindow() != sourceWindow)
+            restoreBackup = true;
+
+            if (!HasNativePrivacyExclusionFormat())
             {
-                return null;
+                var candidate = ReadUnicodeText(NativeMethods.GetClipboardData(UnicodeText));
+                if (candidate is not null && NativeMethods.GetForegroundWindow() == sourceWindow)
+                {
+                    selected = candidate;
+                }
             }
 
             if (backup.Text is not null)
@@ -139,7 +146,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         {
             NativeMethods.CloseClipboard();
 
-            if (selected is not null && backup.OtherData is not null)
+            if (restoreBackup && backup.OtherData is not null)
             {
                 await RestoreNonTextAsync(backup.OtherData, backup.ExcludeFromMonitors, cancellationToken);
             }
@@ -187,9 +194,9 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         _window = null;
     }
 
-    internal static unsafe string? ReadUnicodeText(nint memory)
+    internal static unsafe string? ReadUnicodeText(nint memory, int maxLength = MaxCapturedTextLength)
     {
-        if (memory == 0)
+        if (memory == 0 || maxLength < 0)
         {
             return null;
         }
@@ -208,9 +215,43 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
 
         try
         {
-            var text = new ReadOnlySpan<char>((void*)pointer, (int)length);
+            var scanLimit = (int)Math.Min(length, (nuint)maxLength + 1);
+            var text = new ReadOnlySpan<char>((void*)pointer, scanLimit);
             var end = text.IndexOf('\0');
-            return end < 0 ? null : text[..end].ToString();
+            if (end < 0 || end > maxLength)
+            {
+                return null;
+            }
+
+            return text[..end].ToString();
+        }
+        finally
+        {
+            NativeMethods.GlobalUnlock(memory);
+        }
+    }
+
+    internal static unsafe uint? ReadDword(nint memory)
+    {
+        if (memory == 0)
+        {
+            return null;
+        }
+
+        if (NativeMethods.GlobalSize(memory) < sizeof(uint))
+        {
+            return null;
+        }
+
+        var pointer = NativeMethods.GlobalLock(memory);
+        if (pointer == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            return *(uint*)pointer;
         }
         finally
         {
@@ -394,7 +435,37 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         }
     }
 
-    private static void RestoreText(string previousText, string selected, bool excludeFromMonitors)
+    private static bool HasNativePrivacyExclusionFormat()
+    {
+        if (IsRegisteredFormatAvailable(ExcludeFromMonitorFormat)
+            || IsRegisteredFormatAvailable(ClipboardViewerIgnoreFormat))
+        {
+            return true;
+        }
+
+        return IsNativeZeroFlagFormat(CanIncludeInHistoryFormat)
+            || IsNativeZeroFlagFormat(CanUploadToCloudFormat);
+    }
+
+    private static bool IsRegisteredFormatAvailable(string formatName)
+    {
+        var formatId = NativeMethods.RegisterClipboardFormatW(formatName);
+        return formatId != 0 && NativeMethods.IsClipboardFormatAvailable(formatId);
+    }
+
+    private static bool IsNativeZeroFlagFormat(string formatName)
+    {
+        var formatId = NativeMethods.RegisterClipboardFormatW(formatName);
+        if (formatId == 0 || !NativeMethods.IsClipboardFormatAvailable(formatId))
+        {
+            return false;
+        }
+
+        var value = ReadDword(NativeMethods.GetClipboardData(formatId));
+        return value is null or 0;
+    }
+
+    private static void RestoreText(string previousText, string? selected, bool excludeFromMonitors)
     {
         nint previousMemory = 0;
         nint selectedMemory = 0;
@@ -413,12 +484,15 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
                 return;
             }
 
-            selectedMemory = AllocateText(selected);
-            if (selectedMemory != 0 && NativeMethods.SetClipboardData(UnicodeText, selectedMemory) != 0)
+            if (selected is not null)
             {
-                selectedMemory = 0;
-                ApplyNativePrivacyFormats(excludeFromMonitors);
-                return;
+                selectedMemory = AllocateText(selected);
+                if (selectedMemory != 0 && NativeMethods.SetClipboardData(UnicodeText, selectedMemory) != 0)
+                {
+                    selectedMemory = 0;
+                    ApplyNativePrivacyFormats(excludeFromMonitors);
+                    return;
+                }
             }
 
             throw new COMException("클립보드 텍스트를 복원하지 못했습니다.", Marshal.GetHRForLastWin32Error());

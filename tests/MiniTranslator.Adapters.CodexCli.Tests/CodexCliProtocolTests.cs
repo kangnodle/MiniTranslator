@@ -411,4 +411,82 @@ public class CodexCliProtocolTests
     {
         Assert.Equal(TranslationErrors.EmptyResponse, CodexCliProtocol.Translation(output, Request()).Error);
     }
+
+    [Theory]
+    [InlineData(@"\\attacker\share")]
+    [InlineData("//attacker/share")]
+    [InlineData(@"/\attacker/share")]
+    [InlineData(@"\/attacker/share")]
+    [InlineData(@"C:\Tools\dir:stream")]
+    [InlineData("relative")]
+    [InlineData("")]
+    public void Unsafe_path_directories_are_rejected(string entry)
+    {
+        Assert.False(CodexProcess.IsSafePathDirectory(entry, isWindows: true));
+    }
+
+    [Fact]
+    public void Path_resolution_skips_extensionless_shims_on_windows_and_finds_exe_later_on_path()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "MiniTranslator.CodexPathTests", Guid.NewGuid().ToString("N"));
+        var first = Path.Combine(root, "first");
+        var second = Path.Combine(root, "second");
+        Directory.CreateDirectory(first);
+        Directory.CreateDirectory(second);
+        try
+        {
+            File.WriteAllText(Path.Combine(first, "codex"), "#!/bin/sh");
+            var expected = Path.Combine(second, "codex.exe");
+            File.WriteAllText(expected, string.Empty);
+
+            var resolved = CodexProcess.ResolveExecutableFromPath("codex", $"//attacker/share;{first};{second}", isWindows: true);
+
+            Assert.Equal(expected, resolved);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Environment_sanitization_keeps_allowed_variables_and_drops_overrides()
+    {
+        var environment = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["PATH"] = @"C:\Windows\System32",
+            ["SystemRoot"] = @"C:\Windows",
+            ["OPENAI_API_KEY"] = "sk-test",
+            ["CODEX_API_KEY"] = "sk-test",
+            ["CODEX_ACCESS_TOKEN"] = "tok-test",
+            ["OPENAI_BASE_URL"] = "https://attacker.example",
+            ["HTTPS_PROXY"] = "http://proxy.example:8080",
+            ["NODE_OPTIONS"] = "--require evil.js",
+            ["NODE_TLS_REJECT_UNAUTHORIZED"] = "0",
+            ["SSL_CERT_FILE"] = @"C:\evil\ca.pem",
+        };
+
+        CodexProcess.SanitizeEnvironment(environment);
+
+        Assert.True(environment.ContainsKey("PATH"));
+        Assert.True(environment.ContainsKey("SystemRoot"));
+        Assert.False(environment.ContainsKey("OPENAI_API_KEY"));
+        Assert.False(environment.ContainsKey("CODEX_API_KEY"));
+        Assert.False(environment.ContainsKey("CODEX_ACCESS_TOKEN"));
+        Assert.False(environment.ContainsKey("OPENAI_BASE_URL"));
+        Assert.False(environment.ContainsKey("HTTPS_PROXY"));
+        Assert.False(environment.ContainsKey("NODE_OPTIONS"));
+        Assert.False(environment.ContainsKey("NODE_TLS_REJECT_UNAUTHORIZED"));
+        Assert.False(environment.ContainsKey("SSL_CERT_FILE"));
+    }
+
+    [Fact]
+    public void Sandbox_working_directory_lives_under_local_appdata()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrWhiteSpace(localAppData))
+        {
+            Assert.StartsWith(localAppData, CodexProcess.EnsureSandboxWorkingDirectory(), StringComparison.OrdinalIgnoreCase);
+        }
+    }
 }

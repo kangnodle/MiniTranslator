@@ -3,6 +3,7 @@ using System.Security;
 using Microsoft.Win32;
 using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Domain.Common;
+using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Adapters.Windows;
 
@@ -40,13 +41,7 @@ internal sealed class WindowsStartupRegistration : IStartupRegistration
         {
             if (enabled)
             {
-                if (string.IsNullOrWhiteSpace(_executablePath)
-                    || !Path.IsPathFullyQualified(_executablePath)
-                    || !File.Exists(_executablePath)
-                    || !string.Equals(Path.GetExtension(_executablePath), ".exe", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(Path.GetFileName(_executablePath), "dotnet.exe", StringComparison.OrdinalIgnoreCase)
-                    || _executablePath.Contains('"')
-                    || _executablePath.Length + 2 > 260)
+                if (!IsValidStartupExecutable(_executablePath))
                 {
                     return new Error("Startup.InvalidExecutable", "자동 실행을 등록할 수 없습니다. 설치된 MiniTranslator.exe를 실행하고 실행 파일 경로를 258자 이내로 유지하세요.");
                 }
@@ -65,6 +60,44 @@ internal sealed class WindowsStartupRegistration : IStartupRegistration
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
             return new Error("Startup.WriteFailed", "자동 실행 설정을 변경하지 못했습니다.").WithDetail(ex.Message);
+        }
+    }
+
+    internal static bool IsValidStartupExecutable(string? executablePath)
+    {
+        if (string.IsNullOrWhiteSpace(executablePath)
+            || executablePath.Length + 2 > AppSettings.MaxExecutablePathLength
+            || executablePath.Contains('"')
+            || !AppSettings.IsValidExecutablePath(executablePath)
+            || !File.Exists(executablePath)
+            || string.Equals(Path.GetFileName(executablePath), "dotnet.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        try
+        {
+            var drive = new DriveInfo(executablePath[..1]);
+            if (drive.DriveType == DriveType.Network)
+            {
+                return false;
+            }
+
+            if (File.ResolveLinkTarget(executablePath, returnFinalTarget: true) is { } target)
+            {
+                var targetPath = target.FullName;
+                if (!AppSettings.IsValidExecutablePath(targetPath)
+                    || new DriveInfo(targetPath[..1]).DriveType == DriveType.Network)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return false;
         }
     }
 }

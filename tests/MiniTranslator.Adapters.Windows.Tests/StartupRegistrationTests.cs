@@ -37,6 +37,9 @@ public sealed class StartupRegistrationTests : IDisposable
     [InlineData(null)]
     [InlineData("MiniTranslator.exe")]
     [InlineData(@"C:\missing\MiniTranslator.exe")]
+    [InlineData(@"\\attacker\share\MiniTranslator.exe")]
+    [InlineData("//attacker/share/MiniTranslator.exe")]
+    [InlineData(@"C:\Tools\doc.txt:MiniTranslator.exe")]
     public void Invalid_executable_does_not_create_a_registration(string? executable)
     {
         var startup = new WindowsStartupRegistration(executable, _keyPath);

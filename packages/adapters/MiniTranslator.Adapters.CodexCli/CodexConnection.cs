@@ -9,6 +9,8 @@ internal sealed class CodexConnection(ICodexProcess process) : IDisposable
 
     private long _lastRequestId;
 
+    public string WorkingDirectory => process.WorkingDirectory;
+
     public long NextRequestId() => ++_lastRequestId;
 
     public Task SendAsync(string line, CancellationToken cancellationToken) => process.WriteLineAsync(line, cancellationToken);

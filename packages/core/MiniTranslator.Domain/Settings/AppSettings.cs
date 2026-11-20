@@ -127,7 +127,7 @@ public sealed record AppSettings(
         for (var i = 0; i < normalized.Length; i++)
         {
             var ch = normalized[i];
-            if (char.IsControl(ch) || ch is '"' or '<' or '>' or '|' or '*' or '?' or ';' or '&')
+            if (char.IsControl(ch) || ch is '"' or '<' or '>' or '|' or '*' or '?' or ';' or '&' || (ch == ':' && i != 1))
             {
                 return false;
             }

@@ -176,16 +176,31 @@ public class AppSettingsTests
 
     [Theory]
     [InlineData(@"\\attacker\share\codex.exe")]
+    [InlineData(@"//attacker/share/codex.exe")]
     [InlineData(@"\\?\C:\Tools\codex.exe")]
     [InlineData(@"codex.exe")]
     [InlineData(@"C:\Tools\..\Windows\cmd.exe")]
     [InlineData(@"C:\Tools\codex.cmd")]
+    [InlineData(@"C:\Tools\doc.txt:codex.exe")]
     [InlineData(@"C:\.exe")]
     public void Unsafe_codex_executable_paths_are_rejected_on_merge(string path)
     {
         var draft = AppSettings.Default with { CodexExecutablePath = path };
 
         Assert.Equal(SettingsErrors.InvalidCodexExecutablePath, AppSettings.Default.MergeDraft(draft, AppSettings.Default).Error);
+    }
+
+    [Fact]
+    public void Error_details_are_truncated_and_stripped_of_disallowed_control_and_bidi_characters()
+    {
+        var baseError = new MiniTranslator.Domain.Common.Error("Test.Code", "Base");
+        var oversized = new string('x', MiniTranslator.Domain.Common.Error.MaxDetailLength + 50);
+
+        var truncated = baseError.WithDetail(oversized);
+        Assert.Equal("Base\n" + new string('x', MiniTranslator.Domain.Common.Error.MaxDetailLength) + "...", truncated.Message);
+
+        var cleaned = baseError.WithDetail("hello\u202E\0world");
+        Assert.Equal("Base\nhelloworld", cleaned.Message);
     }
 
     [Theory]

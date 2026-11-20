@@ -197,6 +197,56 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
         Assert.Equal(AppSettings.Default, loaded);
     }
 
+    [Fact]
+    public async Task Reparse_point_root_directory_is_rejected_on_load_and_save()
+    {
+        var target = Path.Combine(Path.GetTempPath(), "MiniTranslator.Tests", Guid.NewGuid().ToString("N"));
+        var junction = Path.Combine(Path.GetTempPath(), "MiniTranslator.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(target);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(target, "settings.json"), """{"Version":1,"Theme":"Dark"}""");
+            if (!TryCreateDirectoryJunction(junction, target))
+            {
+                return;
+            }
+
+            var repository = new JsonSettingsRepository(new AppPaths(junction));
+
+            Assert.Equal(AppSettings.Default, await repository.LoadAsync());
+            Assert.True((await repository.SaveAsync(AppSettings.Default with { Theme = AppTheme.Dark })).IsFailure);
+        }
+        finally
+        {
+            if (Directory.Exists(junction))
+            {
+                Directory.Delete(junction);
+            }
+
+            if (Directory.Exists(target))
+            {
+                Directory.Delete(target, recursive: true);
+            }
+        }
+    }
+
+    private static bool TryCreateDirectoryJunction(string link, string target)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            ArgumentList = { "/c", "mklink", "/J", link, target },
+        });
+        process?.WaitForExit();
+        return process?.ExitCode == 0 && Directory.Exists(link);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_paths.Root))

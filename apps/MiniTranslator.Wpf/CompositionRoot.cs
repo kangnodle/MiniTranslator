@@ -105,7 +105,18 @@ internal sealed class AppContainer : IDisposable
                     var parent = System.IO.Path.GetDirectoryName(target);
                     if (!string.IsNullOrEmpty(parent))
                     {
+                        if (System.IO.Directory.Exists(parent)
+                            && (System.IO.File.GetAttributes(parent) & System.IO.FileAttributes.ReparsePoint) != 0)
+                        {
+                            return target;
+                        }
+
                         System.IO.Directory.CreateDirectory(parent);
+
+                        if ((System.IO.File.GetAttributes(parent) & System.IO.FileAttributes.ReparsePoint) != 0)
+                        {
+                            return target;
+                        }
                     }
 
                     System.IO.Directory.Move(legacy, target);

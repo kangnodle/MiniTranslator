@@ -224,7 +224,7 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
 
     private static async Task<Result<string>?> StartThreadAsync(CodexConnection session, string model, CancellationToken cancellationToken)
     {
-        var workingDirectory = CodexProcess.EnsureSandboxWorkingDirectory();
+        var workingDirectory = session.WorkingDirectory;
         if (await session.CallAsync(id => CodexCliProtocol.StartThread(id, workingDirectory, model), TranslationErrors.CodexFailed, cancellationToken)
             is not { } thread)
         {
