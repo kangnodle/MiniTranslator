@@ -7,7 +7,7 @@ New-Item -ItemType Directory -Path (Join-Path $testRoot 'repo/scripts') -Force |
 try {
     $utf8 = New-Object Text.UTF8Encoding $false
     $fixture = Join-Path $testRoot 'repo'
-    foreach ($name in @('release.ps1', 'release.sh', 'installer.nsi')) {
+    foreach ($name in @('release.ps1', 'release.sh', 'installer.nsi', 'install-desktop-runtime.ps1')) {
         Copy-Item -LiteralPath (Join-Path $repoRoot "scripts/$name") -Destination (Join-Path $fixture "scripts/$name")
     }
     [IO.File]::WriteAllText((Join-Path $fixture 'MiniTranslator.slnx'), '', $utf8)
@@ -26,7 +26,10 @@ if ($stage -eq 'msbuild') {
 }
 if ($stage -eq 'publish' -and $env:MINITRANSLATOR_RELEASE_TEST_FAIL -ne 'missing-bundle') {
     $directory = $nativeArgs[[Array]::IndexOf($nativeArgs, '--output') + 1]
+    New-Item -ItemType Directory -Path (Join-Path $directory 'ko') -Force | Out-Null
     [IO.File]::WriteAllText((Join-Path $directory 'MiniTranslator.exe'), '')
+    [IO.File]::WriteAllText((Join-Path $directory 'MiniTranslator.dll'), '')
+    [IO.File]::WriteAllText((Join-Path $directory 'ko/MiniTranslator.resources.dll'), '')
 }
 if ($stage -eq 'nsis' -and $env:MINITRANSLATOR_RELEASE_TEST_FAIL -ne 'missing-installer') {
     $output = ($nativeArgs | Where-Object { $_.StartsWith('/DOUTPUT_FILE=') }).Substring(14)
@@ -50,9 +53,14 @@ exit 0
         'build|MiniTranslator.slnx|--configuration|Release|--no-restore'
         'test|MiniTranslator.slnx|--configuration|Release|--no-build|--no-restore'
         'msbuild|apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj|-nologo|-getProperty:Version|-property:Configuration=Release'
-        "publish|apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj|--configuration|Release|--runtime|win-x64|--self-contained|true|--output|$publishDirectory|-p:PublishSingleFile=true|-p:IncludeNativeLibrariesForSelfExtract=true|-p:DebugType=embedded"
-        "nsis|/V2|/DAPP_VERSION=0.2.0|/DAPP_EXE=$appExecutable|/DOUTPUT_FILE=$installer|scripts/installer.nsi"
     )
+    foreach ($runtime in @('win-x64', 'win-arm64')) {
+        $directory = Join-Path $fixture "artifacts/publish/$runtime"
+        $uninstallList = Join-Path $fixture "artifacts/$runtime-uninstall.nsh"
+        $output = Join-Path $fixture "artifacts/MiniTranslator-0.2.0-$runtime-Setup.exe"
+        $expected += "publish|apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj|--configuration|Release|--runtime|$runtime|--self-contained|false|--output|$directory|-p:PublishSingleFile=false|-p:DebugType=embedded"
+        $expected += "nsis|/V2|/DAPP_VERSION=0.2.0|/DAPP_RUNTIME=$runtime|/DAPP_DIRECTORY=$directory|/DUNINSTALL_LIST=$uninstallList|/DOUTPUT_FILE=$output|scripts/installer.nsi"
+    }
     $stages = @('', 'restore', 'format', 'lint', 'build', 'test', 'msbuild', 'publish', 'nsis')
     $cases = $stages + @('invalid-version', 'missing-bundle', 'missing-installer')
     Push-Location -LiteralPath $testRoot
@@ -80,7 +88,7 @@ exit 0
                     'invalid-version' { 7 }
                     'missing-bundle' { 8 }
                     'missing-installer' { 9 }
-                    '' { 9 }
+                    '' { 11 }
                     default { [Array]::IndexOf($stages, $stage) + 1 }
                 }
                 $actual = @(Get-Content -LiteralPath $env:MINITRANSLATOR_RELEASE_TEST_LOG)
@@ -88,6 +96,15 @@ exit 0
                     throw "$shell/$stage ran unexpected commands: $($actual -join ', ')."
                 }
                 if (-not $stage -and -not (Test-Path -LiteralPath $installer)) { throw 'Installer missing after success.' }
+                if (-not $stage) {
+                    foreach ($runtime in @('win-x64', 'win-arm64')) {
+                        $output = Join-Path $fixture "artifacts/MiniTranslator-0.2.0-$runtime-Setup.exe"
+                        if (-not (Test-Path -LiteralPath $output)) { throw "$runtime installer missing after success." }
+                        $uninstallList = @(Get-Content -LiteralPath (Join-Path $fixture "artifacts/$runtime-uninstall.nsh"))
+                        $expectedUninstall = @('Delete "$INSTDIR\MiniTranslator.dll"', 'Delete "$INSTDIR\ko\MiniTranslator.resources.dll"', 'RMDir "$INSTDIR\ko"')
+                        if (($uninstallList -join "`n") -cne ($expectedUninstall -join "`n")) { throw "$runtime uninstall list is incorrect." }
+                    }
+                }
             }
         }
     }

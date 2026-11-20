@@ -176,6 +176,8 @@ Windows 설정이나 작업 관리자에서 시작 앱을 별도로 차단했다
 
 특정 패키지만 테스트: `dotnet test tests/MiniTranslator.Presentation.Tests`
 
+런타임 자동 설치 검사: `powershell -NoProfile -File tests/DesktopRuntimeInstaller.Tests.ps1`. 아키텍처와 버전 감지, 기존 런타임 건너뛰기, 다운로드·서명·권한·설치 실패, 재부팅 반환 코드와 임시 파일 정리를 확인하며 실제 런타임은 설치하지 않습니다.
+
 WPF 화면 회귀 검사: `dotnet test tests/MiniTranslator.Wpf.Tests`. 실제 XAML을 로드해 여섯 테마의 콤보박스 접근성, 즉시 적용·저장 및 실패 시 복원, 열린 창의 색상 변경과 새 테마의 글자 대비, 최소 창 크기, 가로/세로 배치 전환, 진행/오류/결과 상태와 접근성 속성을 확인합니다.
 
 ### 릴리스 설치 파일 만들기
@@ -196,7 +198,9 @@ Windows의 Git Bash/MSYS에서는 `bash scripts/release.sh`를 실행합니다.
 - Windows ARM64 설치 파일: `artifacts/MiniTranslator-<Version>-win-arm64-Setup.exe`
 
 버전은 앱 프로젝트의 MSBuild `Version` 속성에서 읽습니다(기본값은 `Directory.Build.props`의 `0.2.0`).
-설치 파일은 앱과 해당 아키텍처의 .NET 데스크톱 런타임을 함께 설치합니다. .NET 11 WPF의 단일 파일 실행 문제를 피하기 위해 실행 파일과 DLL을 같은 폴더에 배치합니다.
+설치 파일은 용량을 줄이기 위해 .NET 런타임을 포함하지 않는 framework-dependent 방식을 사용합니다. 앱 설치 전에 같은 아키텍처(x64 또는 ARM64)의 정식 .NET 11 Desktop Runtime을 확인하고, 없으면 Microsoft 공식 설치 파일을 다운로드하여 Microsoft 서명을 검증한 뒤 자동으로 설치합니다. 런타임을 처음 설치할 때는 인터넷 연결과 Windows 관리자 권한 요청 승인이 필요합니다. 이미 설치되어 있으면 다운로드와 권한 요청을 건너뜁니다. 다운로드·서명 검증·런타임 설치에 실패하거나 권한 요청을 취소하면 앱 설치도 중단합니다. 재부팅이 필요하면 설치 완료 화면에서 안내합니다. 공유 런타임은 앱을 제거해도 유지됩니다.
+.NET 11 WPF의 단일 파일 실행 문제를 피하기 위해 실행 파일과 DLL을 같은 폴더에 배치합니다.
+기존 런타임 포함 버전에서 전환할 때는 앱을 종료하고 기존 버전을 제거한 뒤 설치하세요. 덮어 설치하면 이전 런타임 파일이 남아 용량이 줄지 않을 수 있습니다. 제거해도 사용자 설정은 보존됩니다.
 설치 위치 기본값은 `%LOCALAPPDATA%\Programs\MiniTranslator`이며, 관리자 권한 없이 시작 메뉴 바로가기와 제거 항목을 등록합니다.
 설치·제거 전에 실행 중인 앱을 트레이 메뉴에서 종료하세요. 제거 시 사용자 설정은 보존하며, 생성한 실행 파일에는 코드 서명을 하지 않습니다.
 

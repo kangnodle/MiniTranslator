@@ -70,8 +70,8 @@ try {
             Remove-Item -LiteralPath $publishDirectory -Recurse -Force
         }
 
-        Write-Host "Publishing self-contained $runtime app..."
-        & dotnet publish apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj --configuration Release --runtime $runtime --self-contained true --output $publishDirectory -p:PublishSingleFile=false -p:DebugType=embedded
+        Write-Host "Publishing framework-dependent $runtime app..."
+        & dotnet publish apps/MiniTranslator.Wpf/MiniTranslator.Wpf.csproj --configuration Release --runtime $runtime --self-contained false --output $publishDirectory -p:PublishSingleFile=false -p:DebugType=embedded
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         $appExecutable = Join-Path $publishDirectory 'MiniTranslator.exe'
         if (-not (Test-Path -LiteralPath $appExecutable -PathType Leaf)) {
