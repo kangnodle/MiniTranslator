@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using MiniTranslator.Presentation.ViewModels;
 using MiniTranslator.Domain.Settings;
@@ -61,8 +62,8 @@ public partial class SettingsView : UserControl
             return;
         }
 
-        var combo = (ComboBox)sender;
-        if (combo.SelectedValue is AppTheme theme && theme != model.Theme && model.SetThemeCommand.CanExecute(theme))
+        var selector = (Selector)sender;
+        if (selector.SelectedValue is AppTheme theme && theme != model.Theme && model.SetThemeCommand.CanExecute(theme))
         {
             model.SetThemeCommand.Execute(theme);
         }

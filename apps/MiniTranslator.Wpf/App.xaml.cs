@@ -21,6 +21,10 @@ public partial class App : System.Windows.Application
     private UiLanguage? _uiLanguage;
     private ResourceDictionary? _themeResources;
 
+    public AppTheme CurrentTheme { get; private set; } = AppTheme.System;
+
+    public event EventHandler<AppTheme>? ThemeApplied;
+
     public App()
     {
         InitializeComponent();
@@ -74,6 +78,7 @@ public partial class App : System.Windows.Application
 
     public void ApplyTheme(AppTheme theme)
     {
+        CurrentTheme = theme;
         if (_themeResources is not null) Resources.MergedDictionaries.Remove(_themeResources);
         ThemeMode = theme switch
         {
@@ -84,6 +89,7 @@ public partial class App : System.Windows.Application
         _themeResources = ThemeResources.Create(theme);
         if (_themeResources is not null) Resources.MergedDictionaries.Add(_themeResources);
         Resources["AppSurfaceBrush"] = _themeResources?["WindowBackground"] ?? Brushes.Transparent;
+        ThemeApplied?.Invoke(this, theme);
     }
 
     public void ApplyUiLanguage(UiLanguage language)

@@ -10,13 +10,29 @@
         Title="MiniTranslator" Icon="/MiniTranslator;component/Assets/app.ico" UseLayoutRounding="True"
         Language="{DynamicResource UiCulture}" FontFamily="{DynamicResource AppFontFamily}"
         FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-        Width="600" Height="640" MinWidth="440" MinHeight="600"
+        Width="580" Height="560" MinWidth="440" MinHeight="520"
+        WindowStyle="None" ResizeMode="CanResize"
         Background="{DynamicResource AppSurfaceBrush}"
         WindowStartupLocation="Manual"
         ShowActivated="False" Topmost="True">
 
-    <Grid>
-        <Grid x:Name="TranslationView" Margin="24,16,24,16">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="48" ResizeBorderThickness="6" CornerRadius="12"
+                      GlassFrameThickness="-1" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Template>
+        <ControlTemplate TargetType="Window">
+            <Border Background="{TemplateBinding Background}">
+                <AdornerDecorator>
+                    <ContentPresenter />
+                </AdornerDecorator>
+            </Border>
+        </ControlTemplate>
+    </Window.Template>
+
+    <Grid x:Name="RootChrome">
+        <Grid x:Name="TranslationView">
             <Grid.InputBindings>
                 <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding TranslateCommand}" />
                 <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SwapLanguagesCommand}" />
@@ -24,56 +40,220 @@
                 <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding OpenSettingsCommand}" />
             </Grid.InputBindings>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="48" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Style="{StaticResource PageTitleStyle}" Text="{DynamicResource Translate}" />
-                <Button x:Name="SettingsButton" Grid.Column="1" Style="{StaticResource IconButtonStyle}"
-                        VerticalAlignment="Center" KeyboardNavigation.TabIndex="8"
-                        Command="{Binding OpenSettingsCommand}" ToolTip="{DynamicResource SettingsShortcut}"
-                        AutomationProperties.Name="{DynamicResource Settings}" AutomationProperties.AcceleratorKey="Ctrl+,">
-                    <TextBlock Style="{StaticResource IconStyle}" Text="&#xE713;" />
-                </Button>
-            </Grid>
+            <Border x:Name="TopBar" Grid.Row="0" Padding="16,0,12,0"
+                    SizeChanged="OnTopBarSizeChanged"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-            <Grid Grid.Row="1" Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource SourceLanguageLabel}" Target="{Binding ElementName=SourceLanguageBox}" />
-                <ComboBox x:Name="SourceLanguageBox" Grid.Row="1" KeyboardNavigation.TabIndex="0"
-                          AutomationProperties.Name="{DynamicResource SourceLanguage}"
-                          ItemsSource="{Binding SourceLanguages}" SelectedItem="{Binding SelectedSource}"
-                          ItemTemplate="{StaticResource LanguageItemTemplate}" HorizontalAlignment="Stretch" />
-                <Button Grid.Row="1" Grid.Column="1" Margin="8,0"
-                        Style="{StaticResource IconButtonStyle}" KeyboardNavigation.TabIndex="1"
-                        Command="{Binding SwapLanguagesCommand}" ToolTip="{DynamicResource SwapLanguagesShortcut}"
-                        AutomationProperties.Name="{DynamicResource SwapLanguages}" AutomationProperties.AcceleratorKey="Ctrl+Shift+S">
-                    <TextBlock Style="{StaticResource IconStyle}" Text="&#xE8AB;" />
-                </Button>
-                <Label Grid.Column="2" Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource TargetLanguageLabel}" Target="{Binding ElementName=TargetLanguageBox}" />
-                <ComboBox x:Name="TargetLanguageBox" Grid.Row="1" Grid.Column="2" KeyboardNavigation.TabIndex="2"
-                          AutomationProperties.Name="{DynamicResource TargetLanguage}"
-                          ItemsSource="{Binding TargetLanguages}" SelectedItem="{Binding SelectedTarget}"
-                          ItemTemplate="{StaticResource LanguageItemTemplate}" HorizontalAlignment="Stretch" />
-            </Grid>
+                    <Image Source="/MiniTranslator;component/Assets/app.ico" Width="18" Height="18"
+                           Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
 
-            <Grid x:Name="TranslationPanels" Grid.Row="2" SizeChanged="OnTranslationPanelsSizeChanged">
+                    <Border Grid.Column="1" Margin="0,0,8,0" HorizontalAlignment="Left"
+                            Style="{StaticResource SpotlightPillContainerStyle}"
+                            WindowChrome.IsHitTestVisibleInChrome="True" VerticalAlignment="Center">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="SourceLanguageBox" Grid.Column="0"
+                                      Style="{StaticResource SpotlightLanguageComboBoxStyle}"
+                                      MaxWidth="140" KeyboardNavigation.TabIndex="0"
+                                      AutomationProperties.Name="{DynamicResource SourceLanguage}"
+                                      ItemsSource="{Binding SourceLanguages}" SelectedItem="{Binding SelectedSource}"
+                                      ItemTemplate="{StaticResource LanguageItemTemplate}" />
+                            <Button x:Name="SwapButton" Grid.Column="1" Margin="1,0"
+                                    Style="{StaticResource SpotlightRoundIconButtonStyle}"
+                                    KeyboardNavigation.TabIndex="1"
+                                    Command="{Binding SwapLanguagesCommand}"
+                                    ToolTip="{DynamicResource SwapLanguagesShortcut}"
+                                    AutomationProperties.Name="{DynamicResource SwapLanguages}"
+                                    AutomationProperties.AcceleratorKey="Ctrl+Shift+S">
+                                <TextBlock Style="{StaticResource IconStyle}" FontSize="12" Text="&#xE8AB;" />
+                            </Button>
+                            <ComboBox x:Name="TargetLanguageBox" Grid.Column="2"
+                                      Style="{StaticResource SpotlightLanguageComboBoxStyle}"
+                                      MaxWidth="140" KeyboardNavigation.TabIndex="2"
+                                      AutomationProperties.Name="{DynamicResource TargetLanguage}"
+                                      ItemsSource="{Binding TargetLanguages}" SelectedItem="{Binding SelectedTarget}"
+                                      ItemTemplate="{StaticResource LanguageItemTemplate}" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
+                                WindowChrome.IsHitTestVisibleInChrome="True">
+                        <ToggleButton x:Name="EngineQuickButton" Margin="0,0,4,0"
+                                      Style="{StaticResource SpotlightEnginePillStyle}"
+                                      KeyboardNavigation.TabIndex="8"
+                                      ToolTip="{Binding ActiveEngineSummary}"
+                                      AutomationProperties.Name="{DynamicResource QuickEngineSwitch}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource IconStyle}" FontSize="11" Margin="0,0,5,0"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE945;" />
+                                <TextBlock Text="{Binding ActiveEngineName}" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource IconStyle}" FontSize="9" Margin="5,0,0,0" Text="&#xE70D;" />
+                            </StackPanel>
+                        </ToggleButton>
+
+                        <Popup x:Name="EngineQuickPopup"
+                               PlacementTarget="{Binding ElementName=EngineQuickButton}"
+                               Placement="Custom"
+                               IsOpen="{Binding IsChecked, ElementName=EngineQuickButton, Mode=TwoWay}"
+                               StaysOpen="False" AllowsTransparency="True">
+                            <Grid Margin="16,6,16,20">
+                                <Border x:Name="EnginePopupSurface" MinWidth="232" CornerRadius="10"
+                                        Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                                        BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
+                                        BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="20" ShadowDepth="6" Opacity="0.22" Color="#000000" />
+                                    </Border.Effect>
+                                    <Border CornerRadius="9" Padding="6"
+                                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                                        <StackPanel>
+                                            <TextBlock Margin="10,4,10,6" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                       Text="{DynamicResource QuickEngineSwitchTitle}" />
+
+                                            <Button Style="{StaticResource SpotlightPresetItemStyle}"
+                                                    Command="{Binding SelectEnginePresetCommand}" CommandParameter="Claude:sonnet"
+                                                    Click="OnEnginePresetClick">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock FontSize="12.5" FontWeight="Medium" Text="Claude · sonnet" />
+                                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Text="{DynamicResource PresetClaudeFast}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource IconStyle}" FontSize="12"
+                                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE73E;"
+                                                               Visibility="{Binding IsClaudeSonnetActive, Converter={StaticResource BooleanToVisibility}}" />
+                                                </Grid>
+                                            </Button>
+
+                                            <Button Style="{StaticResource SpotlightPresetItemStyle}"
+                                                    Command="{Binding SelectEnginePresetCommand}" CommandParameter="Claude:opus"
+                                                    Click="OnEnginePresetClick">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock FontSize="12.5" FontWeight="Medium" Text="Claude · opus" />
+                                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Text="{DynamicResource PresetClaudeQuality}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource IconStyle}" FontSize="12"
+                                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE73E;"
+                                                               Visibility="{Binding IsClaudeOpusActive, Converter={StaticResource BooleanToVisibility}}" />
+                                                </Grid>
+                                            </Button>
+
+                                            <Button Style="{StaticResource SpotlightPresetItemStyle}"
+                                                    Command="{Binding SelectEnginePresetCommand}" CommandParameter="Claude:haiku"
+                                                    Click="OnEnginePresetClick">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock FontSize="12.5" FontWeight="Medium" Text="Claude · haiku" />
+                                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Text="{DynamicResource PresetClaudeLight}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource IconStyle}" FontSize="12"
+                                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE73E;"
+                                                               Visibility="{Binding IsClaudeHaikuActive, Converter={StaticResource BooleanToVisibility}}" />
+                                                </Grid>
+                                            </Button>
+
+                                            <Border Height="1" Margin="8,4" Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+
+                                            <Button Style="{StaticResource SpotlightPresetItemStyle}"
+                                                    Command="{Binding SelectEnginePresetCommand}" CommandParameter="Codex:gpt-6.1-terra"
+                                                    Click="OnEnginePresetClick">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel>
+                                                        <TextBlock FontSize="12.5" FontWeight="Medium" Text="Codex · gpt-6.1-terra" />
+                                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Text="{DynamicResource PresetCodexDefault}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource IconStyle}" FontSize="12"
+                                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE73E;"
+                                                               Visibility="{Binding IsCodexActive, Converter={StaticResource BooleanToVisibility}}" />
+                                                </Grid>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </Border>
+                            </Grid>
+                        </Popup>
+
+                        <ToggleButton x:Name="PinButton" Margin="0,0,2,0"
+                                      Style="{StaticResource SpotlightPinButtonStyle}"
+                                      KeyboardNavigation.TabIndex="9"
+                                      IsChecked="{Binding Topmost, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
+                                      ToolTip="{DynamicResource PinWindow}"
+                                      AutomationProperties.Name="{DynamicResource PinWindow}">
+                            <TextBlock FontSize="13">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource IconStyle}">
+                                        <Setter Property="Text" Value="&#xE718;" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                <Setter Property="Text" Value="&#xE840;" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </ToggleButton>
+
+                        <Button x:Name="SettingsButton" Margin="0,0,2,0"
+                                Style="{StaticResource SpotlightIconButtonStyle}"
+                                KeyboardNavigation.TabIndex="10"
+                                Command="{Binding OpenSettingsCommand}"
+                                ToolTip="{DynamicResource SettingsShortcut}"
+                                AutomationProperties.Name="{DynamicResource Settings}"
+                                AutomationProperties.AcceleratorKey="Ctrl+,">
+                            <TextBlock Style="{StaticResource IconStyle}" FontSize="14" Text="&#xE713;" />
+                        </Button>
+
+                        <Button x:Name="CloseButton"
+                                Style="{StaticResource SpotlightCloseButtonStyle}"
+                                KeyboardNavigation.TabIndex="11"
+                                Click="OnCloseButtonClick"
+                                ToolTip="{DynamicResource CloseWindow}"
+                                AutomationProperties.Name="{DynamicResource CloseWindow}">
+                            <TextBlock Style="{StaticResource IconStyle}" FontSize="11" Text="&#xE8BB;" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid x:Name="TranslationPanels" Grid.Row="1" SizeChanged="OnTranslationPanelsSizeChanged">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition x:Name="PanelColumnGap" Width="0" />
@@ -81,61 +261,69 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
-                    <RowDefinition x:Name="PanelRowGap" Height="12" />
+                    <RowDefinition x:Name="PanelRowGap" Height="1" />
                     <RowDefinition x:Name="ResultRow" Height="*" />
                 </Grid.RowDefinitions>
 
-                <Border Style="{StaticResource CardStyle}" Padding="12">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Style="{StaticResource BodyStrongTextStyle}" Text="{DynamicResource OriginalText}" VerticalAlignment="Center" />
-                            <Button x:Name="ClearButton" Grid.Column="1" MinHeight="32" Padding="8,4" KeyboardNavigation.TabIndex="3"
-                                    Command="{Binding ClearCommand}" Click="OnClearClick"
-                                    ToolTip="{DynamicResource ClearAllHint}" AutomationProperties.Name="{DynamicResource ClearAll}" Content="{DynamicResource Clear}" />
-                        </Grid>
-                        <Grid Grid.Row="1">
-                            <TextBox x:Name="SourceTextBox" KeyboardNavigation.TabIndex="4"
-                                     AutomationProperties.Name="{DynamicResource SourceText}"
-                                     AutomationProperties.HelpText="{DynamicResource SourceTextHelp}"
-                                     Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}"
-                                     AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
-                                     VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto"
-                                     FontSize="14" Padding="8" MinHeight="48" MaxLength="5000" />
-                            <TextBlock x:Name="SourcePlaceholder" Margin="9" IsHitTestVisible="False"
-                                       Text="{DynamicResource SourcePlaceholder}" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SourceText.Length}" Value="0">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                        <Grid Grid.Row="2" Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                <Grid x:Name="SourcePanel">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <TextBox x:Name="SourceTextBox"
+                                 Style="{StaticResource SpotlightTextBoxStyle}"
+                                 KeyboardNavigation.TabIndex="3"
+                                 AutomationProperties.Name="{DynamicResource SourceText}"
+                                 AutomationProperties.HelpText="{DynamicResource SourceTextHelp}"
+                                 Text="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True" AcceptsTab="False" TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto"
+                                 FontSize="15" Padding="14,14,14,6" MinHeight="48" MaxLength="5000" />
+                        <TextBlock x:Name="SourcePlaceholder" Margin="16,14,16,6" FontSize="15"
+                                   IsHitTestVisible="False" Text="{DynamicResource SourcePlaceholder}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SourceText.Length}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="16,4,16,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Style="{StaticResource SecondaryTextStyle}" VerticalAlignment="Center"
                                        Text="{Binding CharacterCount}" />
-                            <Button x:Name="TranslateButton" Grid.Column="1" MinWidth="120" MinHeight="32" Padding="16,6" KeyboardNavigation.TabIndex="5"
-                                    Style="{DynamicResource AccentButtonStyle}" Command="{Binding TranslateCommand}"
-                                    ToolTip="{DynamicResource TranslateShortcut}" AutomationProperties.Name="{DynamicResource Translate}" AutomationProperties.AcceleratorKey="Ctrl+Enter">
-                                <TextBlock>
+                            <Button x:Name="ClearButton" Margin="8,0,0,0"
+                                    Style="{StaticResource SpotlightGhostButtonStyle}"
+                                    KeyboardNavigation.TabIndex="4"
+                                    Command="{Binding ClearCommand}" Click="OnClearClick"
+                                    ToolTip="{DynamicResource ClearAllHint}"
+                                    AutomationProperties.Name="{DynamicResource ClearAll}"
+                                    Content="{DynamicResource Clear}" />
+                        </StackPanel>
+
+                        <Button x:Name="TranslateButton" Grid.Column="1" MinWidth="96"
+                                Style="{StaticResource SpotlightPillAccentButtonStyle}"
+                                KeyboardNavigation.TabIndex="5"
+                                Command="{Binding TranslateCommand}"
+                                ToolTip="{DynamicResource TranslateShortcut}"
+                                AutomationProperties.Name="{DynamicResource Translate}"
+                                AutomationProperties.AcceleratorKey="Ctrl+Enter">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock VerticalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="{DynamicResource Translate}" />
@@ -147,38 +335,42 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                            </Button>
-                        </Grid>
+                                <TextBlock Style="{StaticResource IconStyle}" FontSize="10" Margin="6,0,0,0"
+                                           VerticalAlignment="Center" Opacity="0.85" Text="&#xE751;" />
+                            </StackPanel>
+                        </Button>
                     </Grid>
-                </Border>
+                </Grid>
 
-                <Border x:Name="ResultPanel" Grid.Row="2" Style="{StaticResource CardStyle}" Padding="12">
+                <Border x:Name="PanelDivider" Grid.Row="1" Grid.Column="0"
+                        Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+
+                <Border x:Name="ResultPanel" Grid.Row="2" Grid.Column="0"
+                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Style="{StaticResource BodyStrongTextStyle}" Text="{DynamicResource TranslationResult}" />
-                            <ProgressBar Grid.Column="1" Width="72" Height="3" Margin="12,0,0,0"
-                                         IsIndeterminate="True" VerticalAlignment="Center"
-                                         AutomationProperties.Name="{DynamicResource TranslatingAccessible}"
-                                         Visibility="{Binding IsTranslating, Converter={StaticResource BooleanToVisibility}}" />
-                        </Grid>
-                        <Grid Grid.Row="1">
-                            <TextBox x:Name="ResultTextBox" KeyboardNavigation.TabIndex="6"
+
+                        <ProgressBar Grid.Row="0" Height="2" VerticalAlignment="Top"
+                                     Background="Transparent" BorderThickness="0"
+                                     IsIndeterminate="True" Panel.ZIndex="2"
+                                     AutomationProperties.Name="{DynamicResource TranslatingAccessible}"
+                                     Visibility="{Binding IsTranslating, Converter={StaticResource BooleanToVisibility}}" />
+
+                        <Grid Grid.Row="0">
+                            <TextBox x:Name="ResultTextBox"
+                                     Style="{StaticResource SpotlightTextBoxStyle}"
+                                     KeyboardNavigation.TabIndex="6"
                                      AutomationProperties.Name="{DynamicResource TranslationResult}"
                                      AutomationProperties.HelpText="{DynamicResource ResultTextHelp}"
                                      Text="{Binding TranslatedText, Mode=OneWay}" IsReadOnly="True"
                                      TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto"
-                                     FontSize="14" Padding="8" MinHeight="48" Background="Transparent" BorderThickness="0" />
-                            <TextBlock x:Name="ResultPlaceholder" Margin="8" IsHitTestVisible="False"
-                                       TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                     FontSize="15" Padding="14,14,14,6" MinHeight="48" />
+                            <TextBlock x:Name="ResultPlaceholder" Margin="16,14,16,6" FontSize="15"
+                                       IsHitTestVisible="False" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{DynamicResource ResultPlaceholder}" />
@@ -198,11 +390,13 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </Grid>
-                        <Grid Grid.Row="2" Margin="0,8,0,0">
+
+                        <Grid Grid.Row="1" Margin="16,4,16,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
+
                             <controls:LiveTextBlock VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite">
                                 <controls:LiveTextBlock.Style>
                                     <Style TargetType="controls:LiveTextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
@@ -215,26 +409,48 @@
                                     </Style>
                                 </controls:LiveTextBlock.Style>
                             </controls:LiveTextBlock>
-                            <Button Grid.Column="1" MinHeight="32" Padding="8,4" Margin="8,0,0,0" KeyboardNavigation.TabIndex="7"
-                                    Command="{Binding CopyCommand}" ToolTip="{DynamicResource CopyShortcut}"
-                                    AutomationProperties.Name="{DynamicResource CopyResult}" AutomationProperties.AcceleratorKey="Ctrl+Shift+C" Content="{DynamicResource Copy}" />
+
+                            <Button x:Name="CopyButton" Grid.Column="1" Margin="8,0,0,0"
+                                    Style="{StaticResource SpotlightPillButtonStyle}"
+                                    KeyboardNavigation.TabIndex="7"
+                                    Command="{Binding CopyCommand}"
+                                    ToolTip="{DynamicResource CopyShortcut}"
+                                    AutomationProperties.Name="{DynamicResource CopyResult}"
+                                    AutomationProperties.AcceleratorKey="Ctrl+Shift+C">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock FontSize="12" Margin="0,0,6,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource IconStyle}">
+                                                <Setter Property="Text" Value="&#xE8C8;" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCopied}" Value="True">
+                                                        <Setter Property="Text" Value="&#xE73E;" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{DynamicResource Copy}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCopied}" Value="True">
+                                                        <Setter Property="Text" Value="{DynamicResource CopiedShort}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Grid>
                 </Border>
             </Grid>
 
-            <StackPanel Grid.Row="3" Margin="0,8,0,0">
-                <TextBlock Style="{StaticResource SecondaryTextStyle}">
-                    <Run Text="{Binding HotkeyText, Mode=OneWay}" /><Run Text="{DynamicResource ToggleWindowHint}" />
-                    <Run Text="  |  " /><Run Text="{DynamicResource HideWindowHint}" />
-                </TextBlock>
-                <TextBlock x:Name="CopyrightText" Margin="0,8,0,0" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap">
-                    <Run Text="© 2026 kangnodle@gmail.com" />
-                    <Run Text=" · " /><Run Text="{DynamicResource AllRightsReserved}" />
-                </TextBlock>
-            </StackPanel>
-
-            <Border x:Name="TranslationErrorBar" Grid.Row="4" Margin="0,12,0,0"
+            <Border x:Name="TranslationErrorBar" Grid.Row="2" Margin="16,8,16,8"
                     Style="{StaticResource ErrorInfoBarStyle}"
                     Visibility="{Binding ErrorMessage, Converter={StaticResource HasValueToVisibility}}">
                 <Grid>
@@ -242,13 +458,51 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Style="{StaticResource IconStyle}" VerticalAlignment="Top" Margin="0,2,12,0"
+                    <TextBlock Style="{StaticResource IconStyle}" VerticalAlignment="Top" Margin="0,2,10,0"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}" Text="&#xEB90;" />
                     <controls:LiveTextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding ErrorMessage}"
                                             AutomationProperties.LiveSetting="Assertive" />
                 </Grid>
             </Border>
+
+            <Border Grid.Row="3" Padding="16,7"
+                    Background="{DynamicResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource KeycapStyle}">
+                            <TextBlock Style="{StaticResource KeycapTextStyle}" Text="Ctrl+Enter" />
+                        </Border>
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" FontSize="11" Margin="5,0,12,0"
+                                   VerticalAlignment="Center" Text="{DynamicResource Translate}" />
+
+                        <Border Style="{StaticResource KeycapStyle}">
+                            <TextBlock Style="{StaticResource KeycapTextStyle}" Text="Ctrl+Shift+C" />
+                        </Border>
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" FontSize="11" Margin="5,0,0,0"
+                                   VerticalAlignment="Center" Text="{DynamicResource Copy}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource KeycapStyle}">
+                            <TextBlock Style="{StaticResource KeycapTextStyle}" Text="{Binding CompactHotkeyText, Mode=OneWay}" />
+                        </Border>
+                        <Border Style="{StaticResource KeycapStyle}" Margin="8,0,0,0">
+                            <TextBlock Style="{StaticResource KeycapTextStyle}" Text="Esc" />
+                        </Border>
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}" FontSize="11" Margin="5,0,0,0"
+                                   VerticalAlignment="Center" Text="{DynamicResource ShortcutHide}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
+
         <ContentControl x:Name="SettingsHost" Visibility="Collapsed" />
     </Grid>
 </Window>

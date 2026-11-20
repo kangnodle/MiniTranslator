@@ -82,8 +82,8 @@ public class WindowUxTests
                     previousCardColor = cardColor;
                     VerifyThemes(app, translator, settings, settingsViewModel, store);
                     repository.FailSaveWith = new MiniTranslator.Domain.Common.Error("Disk", "디스크가 가득 찼습니다.");
-                    var themeBox = (ComboBox)settings.FindName("ThemeBox");
-                    themeBox.SetCurrentValue(ComboBox.SelectedValueProperty, AppTheme.SolarizedDark);
+                    var themeBox = (Selector)settings.FindName("ThemeBox");
+                    themeBox.SetCurrentValue(Selector.SelectedValueProperty, AppTheme.SolarizedDark);
                     settingsViewModel.SetThemeCommand.ExecutionTask?.GetAwaiter().GetResult();
                     RefreshLayout(settings);
                     Assert.Equal(AppTheme.System, themeBox.SelectedValue);
@@ -110,12 +110,18 @@ public class WindowUxTests
     private static void VerifyTranslator(TranslatorWindow window, TranslatorViewModel viewModel)
     {
         Assert.True(window.ShowInTaskbar);
+        Assert.Equal(WindowStyle.None, window.WindowStyle);
 
         var resultPanel = (Border)window.FindName("ResultPanel");
+        var popupSurface = (Border)window.FindName("EnginePopupSurface");
+        var enginePopup = (Popup)window.FindName("EngineQuickPopup");
         var input = (TextBox)window.FindName("SourceTextBox");
         var result = (TextBox)window.FindName("ResultTextBox");
         var clear = (Button)window.FindName("ClearButton");
         var translate = (Button)window.FindName("TranslateButton");
+        var engineQuick = (ToggleButton)window.FindName("EngineQuickButton");
+        var pin = (ToggleButton)window.FindName("PinButton");
+        var close = (Button)window.FindName("CloseButton");
         var sourcePlaceholder = (TextBlock)window.FindName("SourcePlaceholder");
         var resultPlaceholder = (TextBlock)window.FindName("ResultPlaceholder");
         var errorBar = (Border)window.FindName("TranslationErrorBar");
@@ -126,17 +132,26 @@ public class WindowUxTests
         VerifyTranslationFlow();
         Assert.True(input.ActualHeight >= 48);
         Assert.True(result.ActualHeight >= 48);
+        Assert.True(engineQuick.ActualWidth > 0);
+        Assert.True(pin.IsChecked == true);
+        Assert.True(close.ActualWidth > 0);
         Assert.Equal(Visibility.Visible, sourcePlaceholder.Visibility);
         Assert.Equal(Visibility.Visible, resultPlaceholder.Visibility);
         Assert.Equal(Visibility.Collapsed, errorBar.Visibility);
         Assert.True(result.IsReadOnly && result.IsTabStop);
         Assert.False(input.AcceptsTab);
         Assert.Equal(5000, input.MaxLength);
-        Assert.Same(input.Style, System.Windows.Application.Current.FindResource(typeof(TextBox)));
+        Assert.Same(input.Style, System.Windows.Application.Current.FindResource("SpotlightTextBoxStyle"));
         Assert.NotNull(resultPanel.Background);
-        var labels = Descendants((DependencyObject)window.Content).OfType<Label>().ToArray();
-        Assert.Equal(2, labels.Length);
-        Assert.All(labels, label => Assert.Same(window.FindResource("TextFillColorPrimaryBrush"), label.Foreground));
+        var sourceLang = (ComboBox)window.FindName("SourceLanguageBox");
+        var targetLang = (ComboBox)window.FindName("TargetLanguageBox");
+        Assert.False(string.IsNullOrEmpty(AutomationProperties.GetName(sourceLang)));
+        Assert.False(string.IsNullOrEmpty(AutomationProperties.GetName(targetLang)));
+        Assert.True(targetLang.TranslatePoint(new Point(targetLang.ActualWidth, 0), window).X
+            <= engineQuick.TranslatePoint(new Point(), window).X);
+        Assert.NotNull(window.TryFindResource("SystemFillColorSuccessBrush"));
+        Assert.Equal(255, ((SolidColorBrush)popupSurface.Background).Color.A);
+        Assert.NotNull(enginePopup.CustomPopupPlacementCallback);
 
         Layout(window, 900, window.MinHeight);
         Assert.Equal(0, Grid.GetRow(resultPanel));
@@ -173,12 +188,12 @@ public class WindowUxTests
 
         void VerifyTranslationFlow()
         {
-            Assert.Equal(new[] { 3, 4, 5, 6 }, new Control[] { clear, input, translate, result }
+            Assert.Equal(new[] { 3, 4, 5, 6 }, new Control[] { input, clear, translate, result }
                 .Select(System.Windows.Input.KeyboardNavigation.GetTabIndex));
-            Assert.True(clear.TranslatePoint(new Point(0, clear.ActualHeight), window).Y
-                <= input.TranslatePoint(new Point(), window).Y);
             Assert.True(input.TranslatePoint(new Point(0, input.ActualHeight), window).Y
-                <= translate.TranslatePoint(new Point(), window).Y);
+                <= clear.TranslatePoint(new Point(), window).Y + 4);
+            Assert.True(input.TranslatePoint(new Point(0, input.ActualHeight), window).Y
+                <= translate.TranslatePoint(new Point(), window).Y + 4);
             if (Grid.GetRow(resultPanel) == 2)
             {
                 Assert.True(translate.TranslatePoint(new Point(0, translate.ActualHeight), window).Y
@@ -227,12 +242,12 @@ public class WindowUxTests
             Assert.True(settings.IsVisible);
             Assert.True(((ScrollViewer)settings.FindName("Scroller")).ActualHeight > 0);
             VerifyEngineToolbar(settings);
-            var themeBox = (ComboBox)settings.FindName("ThemeBox");
-            themeBox.Focus();
-            themeBox.IsDropDownOpen = true;
-            Assert.True(themeBox.IsDropDownOpen);
-            PressEscape(themeBox);
-            Assert.False(themeBox.IsDropDownOpen);
+            var uiLanguageBox = (ComboBox)settings.FindName("UiLanguageBox");
+            uiLanguageBox.Focus();
+            uiLanguageBox.IsDropDownOpen = true;
+            Assert.True(uiLanguageBox.IsDropDownOpen);
+            PressEscape(uiLanguageBox);
+            Assert.False(uiLanguageBox.IsDropDownOpen);
             Assert.Single(Descendants((DependencyObject)window.Content).OfType<SettingsView>());
             Assert.DoesNotContain(window.InputBindings.OfType<System.Windows.Input.KeyBinding>(),
                 binding => binding.Command == translator.TranslateCommand);
@@ -393,7 +408,7 @@ public class WindowUxTests
             Assert.Equal(language == UiLanguage.English ? "Start when I sign in to Windows" : "Windows 로그인 시 자동 실행",
                 AutomationProperties.GetName((CheckBox)settings.FindName("StartWithWindowsCheckBox")));
             Assert.Equal(language == UiLanguage.English ? "en-us" : "ko-kr", settings.Language.IetfLanguageTag);
-            var copyright = (TextBlock)translator.FindName("CopyrightText");
+            var copyright = (TextBlock)settings.FindName("CopyrightText");
             var copyrightText = new TextRange(copyright.ContentStart, copyright.ContentEnd).Text;
             Assert.Contains("© 2026 kangnodle@gmail.com", copyrightText);
             Assert.Empty(copyright.Inlines.OfType<Hyperlink>());
@@ -506,24 +521,25 @@ public class WindowUxTests
     private static void VerifyThemes(App app, TranslatorWindow translator, SettingsView settings,
         SettingsViewModel viewModel, SettingsStore store)
     {
-        var combo = (ComboBox)settings.FindName("ThemeBox");
-        Assert.Equal(Enum.GetValues<AppTheme>(), combo.Items.Cast<ComboBoxItem>().Select(item => (AppTheme)item.Tag));
-        Assert.Equal(AppTheme.System, combo.SelectedValue);
-        var peer = UIElementAutomationPeer.CreatePeerForElement(combo)!;
+        var selector = (ListBox)settings.FindName("ThemeBox");
+        var uiLanguageBox = (ComboBox)settings.FindName("UiLanguageBox");
+        Assert.Equal(Enum.GetValues<AppTheme>(), selector.Items.Cast<ListBoxItem>().Select(item => (AppTheme)item.Tag));
+        Assert.Equal(AppTheme.System, selector.SelectedValue);
+        var peer = UIElementAutomationPeer.CreatePeerForElement(selector)!;
         Assert.False(string.IsNullOrEmpty(peer.GetName()));
         Assert.IsAssignableFrom<ISelectionProvider>(peer.GetPattern(PatternInterface.Selection));
         var colors = new Dictionary<AppTheme, Color>();
         foreach (var theme in new[] { AppTheme.Dark, AppTheme.Light, AppTheme.TomorrowNightBlue,
                      AppTheme.SolarizedLight, AppTheme.SolarizedDark, AppTheme.Light, AppTheme.System })
         {
-            combo.SetCurrentValue(ComboBox.SelectedValueProperty, theme);
+            selector.SetCurrentValue(Selector.SelectedValueProperty, theme);
             viewModel.SetThemeCommand.ExecutionTask?.GetAwaiter().GetResult();
             RefreshLayout(settings);
             RefreshLayout(translator);
 
             Assert.Equal(theme, viewModel.Theme);
             Assert.Equal(theme, store.Current.Theme);
-            Assert.Equal(theme, combo.SelectedValue);
+            Assert.Equal(theme, selector.SelectedValue);
             Assert.Equal(theme switch
             {
                 AppTheme.Light or AppTheme.SolarizedLight => ThemeMode.Light,
@@ -541,7 +557,7 @@ public class WindowUxTests
             {
                 Assert.Equal(((SolidColorBrush)settings.FindResource("WindowBackground")).Color, ((SolidColorBrush)settings.Background).Color);
                 Assert.Equal(settings.Background, translator.Background);
-                Assert.Equal(((SolidColorBrush)settings.FindResource("ComboBoxBackground")).Color, ((SolidColorBrush)combo.Background).Color);
+                Assert.Equal(((SolidColorBrush)settings.FindResource("ComboBoxBackground")).Color, ((SolidColorBrush)uiLanguageBox.Background).Color);
                 var hotkey = (TextBox)settings.FindName("HotkeyBox");
                 Assert.Equal(((SolidColorBrush)settings.FindResource("TextControlBackground")).Color, ((SolidColorBrush)hotkey.Background).Color);
                 Assert.Equal(((SolidColorBrush)settings.FindResource("TextControlForeground")).Color, ((SolidColorBrush)hotkey.Foreground).Color);
@@ -554,6 +570,7 @@ public class WindowUxTests
                              ("ComboBoxForegroundPressed", "ComboBoxBackgroundPressed"),
                              ("AccentButtonForeground", "AccentButtonBackground"),
                              ("SystemFillColorCriticalBrush", "SystemFillColorCriticalBackgroundBrush"),
+                             ("SystemFillColorSuccessBrush", "SystemFillColorSuccessBackgroundBrush"),
                          })
                 {
                     Assert.True(Contrast(((SolidColorBrush)settings.FindResource(foreground)).Color,

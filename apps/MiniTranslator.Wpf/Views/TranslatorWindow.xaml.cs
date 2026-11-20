@@ -1,8 +1,11 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
+using MiniTranslator.Adapters.Windows;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Presentation.ViewModels;
 
 namespace MiniTranslator.Wpf.Views;
@@ -10,6 +13,7 @@ namespace MiniTranslator.Wpf.Views;
 public partial class TranslatorWindow : Window
 {
     private const double OffScreen = -32000;
+    private const double EnginePopupHorizontalMargin = 16;
 
     private bool _prewarming;
     private IInputElement? _translationFocus;
@@ -20,11 +24,22 @@ public partial class TranslatorWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        EngineQuickPopup.CustomPopupPlacementCallback = PlaceEnginePopup;
+
+        SourceInitialized += OnSourceInitialized;
+        StateChanged += OnWindowStateChanged;
+        Closed += OnWindowClosed;
+
+        if (System.Windows.Application.Current is App app)
+        {
+            app.ThemeApplied += OnThemeApplied;
+        }
 
         Deactivated += (_, _) =>
         {
             if (viewModel.HideOnDeactivate && IsVisible && SettingsHost.Content is null)
             {
+                EngineQuickPopup.IsOpen = false;
                 Hide();
             }
         };
@@ -34,6 +49,7 @@ public partial class TranslatorWindow : Window
 
     public void ShowSettings(Func<SettingsViewModel> createViewModel)
     {
+        EngineQuickPopup.IsOpen = false;
         if (SettingsHost.Content is null)
         {
             _translationFocus = TranslationView.IsKeyboardFocusWithin ? Keyboard.FocusedElement : SettingsButton;
@@ -152,16 +168,57 @@ public partial class TranslatorWindow : Window
         SourceTextBox.SelectAll();
     }
 
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        var theme = System.Windows.Application.Current is App app ? app.CurrentTheme : AppTheme.System;
+        WindowBackdrop.ApplyAcrylic(this, theme);
+    }
+
+    private void OnThemeApplied(object? sender, AppTheme theme) => WindowBackdrop.ApplyAcrylic(this, theme);
+
+    private void OnWindowStateChanged(object? sender, EventArgs e) =>
+        RootChrome.Margin = WindowState == WindowState.Maximized ? new Thickness(8) : new Thickness(0);
+
+    private void OnWindowClosed(object? sender, EventArgs e)
+    {
+        if (System.Windows.Application.Current is App app)
+        {
+            app.ThemeApplied -= OnThemeApplied;
+        }
+    }
+
     private void OnClearClick(object sender, RoutedEventArgs e) => SourceTextBox.Focus();
+
+    private void OnEnginePresetClick(object sender, RoutedEventArgs e) => EngineQuickPopup.IsOpen = false;
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e) => Hide();
+
+    private void OnTopBarSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var maxLanguageWidth = e.NewSize.Width < 500
+            ? Math.Max(64, (e.NewSize.Width - 266) / 2)
+            : 140;
+        SourceLanguageBox.MaxWidth = maxLanguageWidth;
+        TargetLanguageBox.MaxWidth = maxLanguageWidth;
+    }
+
+    private static CustomPopupPlacement[] PlaceEnginePopup(Size popupSize, Size targetSize, Point offset) =>
+    [
+        new CustomPopupPlacement(
+            new Point(targetSize.Width - popupSize.Width + EnginePopupHorizontalMargin, targetSize.Height),
+            PopupPrimaryAxis.Horizontal),
+    ];
 
     private void OnTranslationPanelsSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var wide = e.NewSize.Width >= 720;
+        Grid.SetRow(PanelDivider, wide ? 0 : 1);
+        Grid.SetColumn(PanelDivider, wide ? 1 : 0);
         Grid.SetRow(ResultPanel, wide ? 0 : 2);
         Grid.SetColumn(ResultPanel, wide ? 2 : 0);
-        PanelColumnGap.Width = new GridLength(wide ? 12 : 0);
+        PanelColumnGap.Width = new GridLength(wide ? 1 : 0);
         ResultColumn.Width = wide ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        PanelRowGap.Height = new GridLength(wide ? 0 : 12);
+        PanelRowGap.Height = new GridLength(wide ? 0 : 1);
         ResultRow.Height = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
     }
 
@@ -169,6 +226,13 @@ public partial class TranslatorWindow : Window
     {
         if (e.Key == Key.Escape && SettingsHost.Content is null)
         {
+            if (EngineQuickPopup.IsOpen)
+            {
+                EngineQuickPopup.IsOpen = false;
+                e.Handled = true;
+                return;
+            }
+
             Hide();
             e.Handled = true;
             return;

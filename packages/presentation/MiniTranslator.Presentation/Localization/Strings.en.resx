@@ -142,4 +142,18 @@ Look for its icon in the system tray.</value></data>
   <data name="Translation.CodexAccountFailed" xml:space="preserve"><value>Could not check or change the Codex sign-in. Try again.</value></data>
   <data name="Translation.CodexSignInFailed" xml:space="preserve"><value>Could not complete the Codex sign-in. Try again.</value></data>
   <data name="Translation.CodexAccountTimedOut" xml:space="preserve"><value>The Codex sign-in did not finish in time. Try again.</value></data>
+  <data name="PinWindow" xml:space="preserve"><value>Keep on top</value></data>
+  <data name="CloseWindow" xml:space="preserve"><value>Hide window (Esc)</value></data>
+  <data name="QuickEngineSwitch" xml:space="preserve"><value>Switch translation engine</value></data>
+  <data name="QuickEngineSwitchTitle" xml:space="preserve"><value>Quick engine switch</value></data>
+  <data name="CopiedShort" xml:space="preserve"><value>Copied</value></data>
+  <data name="ToggleOn" xml:space="preserve"><value>On</value></data>
+  <data name="ToggleOff" xml:space="preserve"><value>Off</value></data>
+  <data name="About" xml:space="preserve"><value>About</value></data>
+  <data name="ShortcutHide" xml:space="preserve"><value>Hide</value></data>
+  <data name="ShortcutToggle" xml:space="preserve"><value>Open / close</value></data>
+  <data name="PresetClaudeFast" xml:space="preserve"><value>Fast default</value></data>
+  <data name="PresetClaudeQuality" xml:space="preserve"><value>High nuance</value></data>
+  <data name="PresetClaudeLight" xml:space="preserve"><value>Ultra fast</value></data>
+  <data name="PresetCodexDefault" xml:space="preserve"><value>ChatGPT sign-in</value></data>
 </root>

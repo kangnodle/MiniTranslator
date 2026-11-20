@@ -38,6 +38,7 @@ internal static class CompositionRoot
 
         services.AddTransient<TranslateTextUseCase>();
         services.AddTransient<ChangeLanguagesUseCase>();
+        services.AddTransient<ChangeEngineUseCase>();
         services.AddTransient<SettingsEditor>();
         services.AddTransient<CaptureSelectionUseCase>();
 

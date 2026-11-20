@@ -150,4 +150,27 @@ public class AppSettingsTests
 
         Assert.Equal(current with { Theme = theme }, current.WithTheme(theme).Value);
     }
+
+    [Fact]
+    public void Selecting_an_engine_and_model_updates_active_display_and_preserves_effort()
+    {
+        var current = AppSettings.Default with { Claude = EngineOptions.Create("sonnet", "high") };
+
+        var updated = current.WithEngineSelection(TranslationEngine.Claude, "opus").Value;
+
+        Assert.Equal(TranslationEngine.Claude, updated.Engine);
+        Assert.Equal("opus", updated.ActiveModelDisplay);
+        Assert.Equal("high", updated.Claude.Effort);
+
+        var codex = updated.WithEngineSelection(TranslationEngine.Codex, "gpt-6.1-terra").Value;
+
+        Assert.Equal(TranslationEngine.Codex, codex.Engine);
+        Assert.Equal("gpt-6.1-terra", codex.ActiveModelDisplay);
+    }
+
+    [Fact]
+    public void Selecting_an_invalid_engine_is_rejected()
+    {
+        Assert.Equal(SettingsErrors.InvalidEngine, AppSettings.Default.WithEngineSelection((TranslationEngine)99).Error);
+    }
 }

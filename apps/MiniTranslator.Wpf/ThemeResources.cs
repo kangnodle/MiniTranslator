@@ -8,15 +8,15 @@ internal static class ThemeResources
 {
     private sealed record Palette(string Background, string Card, string Input, string Hover, string Pressed,
         string Foreground, string Secondary, string Disabled, string Border, string Accent, string OnAccent,
-        string Error, string ErrorBackground);
+        string Error, string ErrorBackground, string Success, string SuccessBackground);
 
     public static ResourceDictionary? Create(AppTheme theme)
     {
         var palette = theme switch
         {
-            AppTheme.TomorrowNightBlue => new Palette("#002451", "#001C40", "#001733", "#00346E", "#003F8E", "#FFFFFF", "#BBDAFF", "#7086A5", "#404F7D", "#BBDAFF", "#002451", "#FF9DA4", "#40243E"),
-            AppTheme.SolarizedLight => new Palette("#FDF6E3", "#EEE8D5", "#FDF6E3", "#E4DDC8", "#DFCA88", "#42585E", "#556970", "#93A1A1", "#B49471", "#268BD2", "#00151A", "#B82724", "#FCE4D6"),
-            AppTheme.SolarizedDark => new Palette("#002B36", "#073642", "#002B36", "#0B3C48", "#073642", "#A6B4B4", "#93A1A1", "#586E75", "#586E75", "#268BD2", "#00151A", "#FF6C6B", "#412F35"),
+            AppTheme.TomorrowNightBlue => new Palette("#002451", "#001C40", "#001733", "#00346E", "#003F8E", "#FFFFFF", "#BBDAFF", "#7086A5", "#404F7D", "#BBDAFF", "#002451", "#FF9DA4", "#40243E", "#D1F1A9", "#1B3B2B"),
+            AppTheme.SolarizedLight => new Palette("#FDF6E3", "#EEE8D5", "#FDF6E3", "#E4DDC8", "#DFCA88", "#42585E", "#556970", "#93A1A1", "#B49471", "#268BD2", "#00151A", "#B82724", "#FCE4D6", "#2B6A00", "#E3ECD6"),
+            AppTheme.SolarizedDark => new Palette("#002B36", "#073642", "#002B36", "#0B3C48", "#073642", "#A6B4B4", "#93A1A1", "#586E75", "#586E75", "#268BD2", "#00151A", "#FF6C6B", "#412F35", "#93C43A", "#153D32"),
             _ => null,
         };
         if (palette is null) return null;
@@ -70,6 +70,8 @@ internal static class ThemeResources
             "AccentButtonForegroundPointerOver", "AccentButtonForegroundPressed", "CheckBoxCheckGlyphForeground", "CheckBoxCheckGlyphForegroundPressed");
         Set(palette.Error, "SystemFillColorCriticalBrush");
         Set(palette.ErrorBackground, "SystemFillColorCriticalBackgroundBrush");
+        Set(palette.Success, "SystemFillColorSuccessBrush");
+        Set(palette.SuccessBackground, "SystemFillColorSuccessBackgroundBrush");
         return resources;
 
         void Set(string color, params string[] keys)

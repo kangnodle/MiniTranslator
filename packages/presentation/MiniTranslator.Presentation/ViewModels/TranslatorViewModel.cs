@@ -15,6 +15,7 @@ public sealed partial class TranslatorViewModel : ObservableObject
 {
     private readonly TranslateTextUseCase _translate;
     private readonly ChangeLanguagesUseCase _changeLanguages;
+    private readonly ChangeEngineUseCase _changeEngine;
     private readonly SettingsStore _settings;
     private readonly IClipboard _clipboard;
 
@@ -31,10 +32,12 @@ public sealed partial class TranslatorViewModel : ObservableObject
         TranslateTextUseCase translate,
         ChangeLanguagesUseCase changeLanguages,
         SettingsStore settings,
-        IClipboard clipboard)
+        IClipboard clipboard,
+        ChangeEngineUseCase? changeEngine = null)
     {
         _translate = translate;
         _changeLanguages = changeLanguages;
+        _changeEngine = changeEngine ?? new ChangeEngineUseCase(settings);
         _settings = settings;
         _clipboard = clipboard;
 
@@ -54,7 +57,25 @@ public sealed partial class TranslatorViewModel : ObservableObject
 
     public string HotkeyText => _settings.Current.Hotkey.ToDisplayString();
 
+    public string CompactHotkeyText => HotkeyText.Replace(" + ", "+", StringComparison.Ordinal);
+
     public bool HideOnDeactivate => _settings.Current.Behavior.HideOnDeactivate;
+
+    public TranslationEngine ActiveEngine => _settings.Current.Engine;
+
+    public string ActiveEngineName => _settings.Current.Engine == TranslationEngine.Codex ? "Codex" : "Claude";
+
+    public string ActiveModelName => _settings.Current.ActiveModelDisplay;
+
+    public string ActiveEngineSummary => $"{ActiveEngineName} · {ActiveModelName}";
+
+    public bool IsClaudeSonnetActive => ActiveEngine == TranslationEngine.Claude && string.Equals(ActiveModelName, "sonnet", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsClaudeOpusActive => ActiveEngine == TranslationEngine.Claude && string.Equals(ActiveModelName, "opus", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsClaudeHaikuActive => ActiveEngine == TranslationEngine.Claude && string.Equals(ActiveModelName, "haiku", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsCodexActive => ActiveEngine == TranslationEngine.Codex;
 
     public string CharacterCount => $"{SourceText.Length:N0} / {TranslationRequest.MaxLength:N0}";
 
@@ -82,9 +103,13 @@ public sealed partial class TranslatorViewModel : ObservableObject
     [ObservableProperty]
     private bool _isTranslating;
 
+    [ObservableProperty]
+    private bool _isCopied;
+
     public void Prepare(string? text, bool autoTranslate = true)
     {
         SetError(null);
+        IsCopied = false;
         if (string.IsNullOrWhiteSpace(text))
         {
             return;
@@ -107,6 +132,7 @@ public sealed partial class TranslatorViewModel : ObservableObject
         using var current = _pendingTranslation = new CancellationTokenSource();
 
         IsTranslating = true;
+        IsCopied = false;
         SetError(null);
         SetInfo(null);
 
@@ -155,6 +181,7 @@ public sealed partial class TranslatorViewModel : ObservableObject
             return;
         }
 
+        IsCopied = false;
         if (!string.IsNullOrWhiteSpace(TranslatedText))
         {
             SourceText = TranslatedText;
@@ -172,10 +199,12 @@ public sealed partial class TranslatorViewModel : ObservableObject
         var copied = _clipboard.SetText(TranslatedText);
         if (copied.IsSuccess)
         {
+            IsCopied = true;
             SetInfo("Copied");
         }
         else
         {
+            IsCopied = false;
             SetError(copied.Error);
         }
     }
@@ -188,6 +217,7 @@ public sealed partial class TranslatorViewModel : ObservableObject
         _pendingTranslation?.Cancel();
         SourceText = string.Empty;
         TranslatedText = string.Empty;
+        IsCopied = false;
         SetError(null);
         SetInfo(null);
         _detectedSource = null;
@@ -195,6 +225,35 @@ public sealed partial class TranslatorViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenSettings() => SettingsRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private async Task SelectEnginePresetAsync(string? preset)
+    {
+        if (string.IsNullOrWhiteSpace(preset))
+        {
+            return;
+        }
+
+        var parts = preset.Split(':', 2);
+        if (!Enum.TryParse<TranslationEngine>(parts[0], ignoreCase: true, out var engine))
+        {
+            return;
+        }
+
+        var model = parts.Length == 2 ? parts[1] : null;
+        var saved = await _changeEngine.ExecuteAsync(engine, model);
+        if (saved.IsFailure)
+        {
+            SetError(saved.Error);
+        }
+        else
+        {
+            SetError(null);
+            NotifyEngineProperties();
+        }
+    }
+
+    partial void OnSourceTextChanged(string value) => IsCopied = false;
 
     partial void OnSelectedSourceChanged(Language value)
     {
@@ -281,7 +340,9 @@ public sealed partial class TranslatorViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(HotkeyText));
+        OnPropertyChanged(nameof(CompactHotkeyText));
         OnPropertyChanged(nameof(HideOnDeactivate));
+        NotifyEngineProperties();
 
         if (settings.Languages != _languages)
         {
@@ -290,6 +351,18 @@ public sealed partial class TranslatorViewModel : ObservableObject
             SyncLanguageSelection();
             RefreshTranslation();
         }
+    }
+
+    private void NotifyEngineProperties()
+    {
+        OnPropertyChanged(nameof(ActiveEngine));
+        OnPropertyChanged(nameof(ActiveEngineName));
+        OnPropertyChanged(nameof(ActiveModelName));
+        OnPropertyChanged(nameof(ActiveEngineSummary));
+        OnPropertyChanged(nameof(IsClaudeSonnetActive));
+        OnPropertyChanged(nameof(IsClaudeOpusActive));
+        OnPropertyChanged(nameof(IsClaudeHaikuActive));
+        OnPropertyChanged(nameof(IsCodexActive));
     }
 
     private void SetError(Error? error)

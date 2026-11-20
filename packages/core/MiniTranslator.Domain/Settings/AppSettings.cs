@@ -74,6 +74,41 @@ public sealed record AppSettings(
     public Result<AppSettings> WithTheme(AppTheme theme) =>
         Enum.IsDefined(theme) ? this with { Theme = theme } : SettingsErrors.InvalidTheme;
 
+    public Result<AppSettings> WithEngineSelection(TranslationEngine engine, string? model = null)
+    {
+        if (!Enum.IsDefined(engine))
+        {
+            return SettingsErrors.InvalidEngine;
+        }
+
+        if (model is null)
+        {
+            return this with { Engine = engine };
+        }
+
+        return engine switch
+        {
+            TranslationEngine.Claude => this with
+            {
+                Engine = engine,
+                Claude = EngineOptions.Create(model, Claude.Effort),
+            },
+            TranslationEngine.Codex => this with
+            {
+                Engine = engine,
+                Codex = EngineOptions.Create(model, Codex.Effort),
+            },
+            _ => SettingsErrors.InvalidEngine,
+        };
+    }
+
+    public string ActiveModelDisplay => Engine switch
+    {
+        TranslationEngine.Claude => Claude.Model.Length == 0 ? "sonnet" : Claude.Model,
+        TranslationEngine.Codex => Codex.Model.Length == 0 ? "gpt-6.1-terra" : Codex.Model,
+        _ => string.Empty,
+    };
+
     public static AppSettings Default { get; } =
         new(HotkeyGesture.Default, LanguagePair.Default, BehaviorSettings.Default);
 }

@@ -7,10 +7,21 @@ internal static partial class NativeMethods
     public const int WM_HOTKEY = 0x0312;
     public const uint MOD_NOREPEAT = 0x4000;
 
+    public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+    public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+
+    public const int DWMWCP_ROUND = 2;
+    public const int DWMSBT_NONE = 1;
+    public const int DWMSBT_TRANSIENTWINDOW = 3;
+
     public const uint INPUT_KEYBOARD = 1;
     public const uint KEYEVENTF_KEYUP = 0x0002;
 
     public static readonly nint HWND_MESSAGE = -3;
+
+    [LibraryImport("dwmapi.dll")]
+    public static partial int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

@@ -23,7 +23,11 @@ public class TranslatorViewModelTests
         var translator = new FakeTranslator();
         var clipboard = new FakeClipboard();
         var viewModel = new TranslatorViewModel(
-            new TranslateTextUseCase(translator), new ChangeLanguagesUseCase(store), store, clipboard);
+            new TranslateTextUseCase(translator),
+            new ChangeLanguagesUseCase(store),
+            store,
+            clipboard,
+            new ChangeEngineUseCase(store));
         return new Harness(viewModel, translator, clipboard, repository, store);
     }
 
@@ -116,5 +120,40 @@ public class TranslatorViewModelTests
         Assert.Equal("ko", h.ViewModel.SelectedSource.Code);
         Assert.Equal("en", h.ViewModel.SelectedTarget.Code);
         Assert.False(h.ViewModel.HideOnDeactivate);
+    }
+
+    [Fact]
+    public async Task Selecting_an_engine_preset_persists_and_updates_active_summary()
+    {
+        var h = Create();
+        Assert.Equal("Claude · sonnet", h.ViewModel.ActiveEngineSummary);
+        Assert.True(h.ViewModel.IsClaudeSonnetActive);
+
+        await h.ViewModel.SelectEnginePresetCommand.ExecuteAsync("Claude:opus");
+
+        Assert.Equal("Claude · opus", h.ViewModel.ActiveEngineSummary);
+        Assert.True(h.ViewModel.IsClaudeOpusActive);
+        Assert.Equal("opus", h.Repository.Saved?.Claude.Model);
+
+        await h.ViewModel.SelectEnginePresetCommand.ExecuteAsync("Codex:gpt-6.1-terra");
+
+        Assert.Equal(TranslationEngine.Codex, h.ViewModel.ActiveEngine);
+        Assert.Equal("Codex · gpt-6.1-terra", h.ViewModel.ActiveEngineSummary);
+        Assert.True(h.ViewModel.IsCodexActive);
+        Assert.Equal(TranslationEngine.Codex, h.Repository.Saved?.Engine);
+    }
+
+    [Fact]
+    public void Copy_sets_copied_feedback_and_editing_source_clears_it()
+    {
+        var h = Create();
+        h.ViewModel.Prepare("hello");
+
+        h.ViewModel.CopyCommand.Execute(null);
+        Assert.True(h.ViewModel.IsCopied);
+
+        h.ViewModel.SourceText = "updated";
+        Assert.False(h.ViewModel.IsCopied);
+        Assert.DoesNotContain(" + ", h.ViewModel.CompactHotkeyText);
     }
 }
