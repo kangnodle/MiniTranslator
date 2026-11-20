@@ -94,17 +94,17 @@ public class SelectedEngineTranslatorTests
     public async Task Uses_the_engine_selected_when_each_request_is_made()
     {
         var store = new SettingsStore(new InMemorySettingsRepository());
-        var google = new FakeTranslator();
         var claude = new FakeTranslator();
-        var translator = new SelectedEngineTranslator(store, engine => engine == TranslationEngine.Claude ? claude : google);
+        var codex = new FakeTranslator();
+        var translator = new SelectedEngineTranslator(store, engine => engine == TranslationEngine.Codex ? codex : claude);
 
         await translator.TranslateAsync(Request);
-        await store.UpdateAsync(s => s with { Engine = TranslationEngine.Claude });
+        await store.UpdateAsync(s => s with { Engine = TranslationEngine.Codex });
         await translator.TranslateAsync(Request);
         await translator.TranslateAsync(Request);
 
-        Assert.Single(google.Calls);
-        Assert.Equal(2, claude.Calls.Count);
+        Assert.Single(claude.Calls);
+        Assert.Equal(2, codex.Calls.Count);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class SelectedEngineTranslatorTests
 
         await translator.TranslateAsync(Request);
 
-        Assert.Equal([TranslationEngine.Google], resolved);
+        Assert.Equal([TranslationEngine.Claude], resolved);
     }
 }
 

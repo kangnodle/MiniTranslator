@@ -2,11 +2,15 @@ using System.ComponentModel;
 using System.Text;
 using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Domain.Common;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.CodexCli;
 
-internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeSpan timeout) : ITranslator, IDisposable
+internal sealed class CodexCliTranslator(
+    Func<ICodexProcess> startProcess,
+    TimeSpan timeout,
+    Func<EngineOptions>? currentOptions = null) : ITranslator, IDisposable
 {
     public const int MaxTurnsPerSession = 20;
 
@@ -14,6 +18,7 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
     private CodexConnection? _session;
     private string? _threadId;
     private int _turns;
+    private EngineOptions _sessionOptions = EngineOptions.Default;
 
     public async Task<Result<TranslationResult>> TranslateAsync(
         TranslationRequest request,
@@ -24,6 +29,13 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         {
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             deadline.CancelAfter(timeout);
+
+            var options = currentOptions?.Invoke() ?? EngineOptions.Default;
+            if (options != _sessionOptions)
+            {
+                EndSession();
+                _sessionOptions = options;
+            }
 
             var reusedSession = _session is not null && _turns < MaxTurnsPerSession;
             var result = await ExchangeAsync(request, deadline.Token);
@@ -107,7 +119,7 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         if (_session is null)
         {
             _session = new CodexConnection(startProcess());
-            if (await OpenThreadAsync(_session, cancellationToken) is not { } opened)
+            if (await OpenThreadAsync(_session, _sessionOptions.Model, cancellationToken) is not { } opened)
             {
                 return null;
             }
@@ -120,10 +132,10 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
             _threadId = opened.Value;
         }
 
-        return await TurnAsync(_session, _threadId!, request, cancellationToken);
+        return await TurnAsync(_session, _threadId!, request, _sessionOptions.Effort, cancellationToken);
     }
 
-    private static async Task<Result<string>?> OpenThreadAsync(CodexConnection session, CancellationToken cancellationToken)
+    private static async Task<Result<string>?> OpenThreadAsync(CodexConnection session, string model, CancellationToken cancellationToken)
     {
         if (await session.HandshakeAsync(TranslationErrors.CodexFailed, cancellationToken) is not { } handshake)
         {
@@ -151,7 +163,7 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         }
 
         var workingDirectory = Path.GetTempPath();
-        if (await session.CallAsync(id => CodexCliProtocol.StartThread(id, workingDirectory), TranslationErrors.CodexFailed, cancellationToken)
+        if (await session.CallAsync(id => CodexCliProtocol.StartThread(id, workingDirectory, model), TranslationErrors.CodexFailed, cancellationToken)
             is not { } thread)
         {
             return null;
@@ -169,10 +181,11 @@ internal sealed class CodexCliTranslator(Func<ICodexProcess> startProcess, TimeS
         CodexConnection session,
         string threadId,
         TranslationRequest request,
+        string effort,
         CancellationToken cancellationToken)
     {
         var requestId = session.NextRequestId();
-        await session.SendAsync(CodexCliProtocol.StartTurn(requestId, threadId, request), cancellationToken);
+        await session.SendAsync(CodexCliProtocol.StartTurn(requestId, threadId, request, effort), cancellationToken);
 
         string? turnId = null;
         var output = new StringBuilder();

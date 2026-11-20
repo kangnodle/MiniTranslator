@@ -13,7 +13,6 @@
   <Folder Name="/packages/adapters/">
     <Project Path="packages/adapters/MiniTranslator.Adapters.ClaudeCli/MiniTranslator.Adapters.ClaudeCli.csproj" />
     <Project Path="packages/adapters/MiniTranslator.Adapters.CodexCli/MiniTranslator.Adapters.CodexCli.csproj" />
-    <Project Path="packages/adapters/MiniTranslator.Adapters.GoogleTranslate/MiniTranslator.Adapters.GoogleTranslate.csproj" />
     <Project Path="packages/adapters/MiniTranslator.Adapters.JsonSettings/MiniTranslator.Adapters.JsonSettings.csproj" />
     <Project Path="packages/adapters/MiniTranslator.Adapters.Windows/MiniTranslator.Adapters.Windows.csproj" />
   </Folder>
@@ -24,7 +23,6 @@
     <Project Path="tests/MiniTranslator.Presentation.Tests/MiniTranslator.Presentation.Tests.csproj" />
     <Project Path="tests/MiniTranslator.Adapters.ClaudeCli.Tests/MiniTranslator.Adapters.ClaudeCli.Tests.csproj" />
     <Project Path="tests/MiniTranslator.Adapters.CodexCli.Tests/MiniTranslator.Adapters.CodexCli.Tests.csproj" />
-    <Project Path="tests/MiniTranslator.Adapters.GoogleTranslate.Tests/MiniTranslator.Adapters.GoogleTranslate.Tests.csproj" />
     <Project Path="tests/MiniTranslator.Adapters.JsonSettings.Tests/MiniTranslator.Adapters.JsonSettings.Tests.csproj" />
     <Project Path="tests/MiniTranslator.Adapters.Windows.Tests/MiniTranslator.Adapters.Windows.Tests.csproj" />
     <Project Path="tests/MiniTranslator.Architecture.Tests/MiniTranslator.Architecture.Tests.csproj" />

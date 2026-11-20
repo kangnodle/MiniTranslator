@@ -37,15 +37,28 @@ public class SettingsMapperTests
     }
 
     [Theory]
-    [InlineData("Google", TranslationEngine.Google)]
+    [InlineData("Google", TranslationEngine.Claude)]
     [InlineData("claude", TranslationEngine.Claude)]
     [InlineData("Codex", TranslationEngine.Codex)]
-    [InlineData(null, TranslationEngine.Google)]
-    [InlineData("unknown", TranslationEngine.Google)]
-    [InlineData("7", TranslationEngine.Google)]
+    [InlineData(null, TranslationEngine.Claude)]
+    [InlineData("unknown", TranslationEngine.Claude)]
+    [InlineData("7", TranslationEngine.Claude)]
     public void Reads_the_engine_and_defaults_older_or_invalid_values(string? value, TranslationEngine expected)
     {
         Assert.Equal(expected, SettingsMapper.FromDocument(new SettingsDocument { Engine = value }).Engine);
+    }
+
+    [Fact]
+    public void Engine_model_and_effort_round_trip_and_are_left_out_of_the_file_when_unset()
+    {
+        var settings = AppSettings.Default with { Claude = new EngineOptions("opus", "low"), Codex = new EngineOptions("", "high") };
+
+        var restored = SettingsMapper.FromDocument(SettingsMapper.ToDocument(settings));
+
+        Assert.Equal(settings.Claude, restored.Claude);
+        Assert.Equal(settings.Codex, restored.Codex);
+        Assert.Null(SettingsMapper.ToDocument(AppSettings.Default).Claude);
+        Assert.Equal(EngineOptions.Default, SettingsMapper.FromDocument(new SettingsDocument()).Codex);
     }
 
     [Fact]

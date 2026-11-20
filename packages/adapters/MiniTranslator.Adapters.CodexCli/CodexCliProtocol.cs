@@ -10,7 +10,7 @@ internal static class CodexCliProtocol
 {
     public const string Executable = "codex";
 
-    public const string Model = "gpt-6.1-terra";
+    public const string DefaultModel = "gpt-6.1-terra";
 
     public const string HomeVariable = "CODEX_HOME";
 
@@ -65,7 +65,7 @@ internal static class CodexCliProtocol
 
     public static string Logout(long id) => Request(id, "account/logout", new { });
 
-    public static string StartThread(long id, string workingDirectory)
+    public static string StartThread(long id, string workingDirectory, string model = "")
     {
         var config = new Dictionary<string, object>
         {
@@ -85,13 +85,13 @@ internal static class CodexCliProtocol
             cwd = workingDirectory,
             sandbox = "read-only",
             approvalPolicy = "never",
-            model = Model,
+            model = model.Length == 0 ? DefaultModel : model,
             baseInstructions = SystemPrompt,
             config,
         });
     }
 
-    public static string StartTurn(long id, string threadId, TranslationRequest request)
+    public static string StartTurn(long id, string threadId, TranslationRequest request, string effort = "")
     {
         var languages = request.Languages;
         var direction = languages.Source.IsAutoDetect
@@ -99,7 +99,12 @@ internal static class CodexCliProtocol
             : $"from {languages.Source.EnglishName} into {languages.Target.EnglishName}";
         var text = $"Translate the text inside <source_text> {direction}.\n<source_text>\n{request.Text}\n</source_text>";
 
-        return Request(id, "turn/start", new { threadId, input = new[] { new { type = "text", text } } });
+        return Request(id, "turn/start", new
+        {
+            threadId,
+            input = new[] { new { type = "text", text } },
+            effort = effort.Length == 0 ? null : effort,
+        });
     }
 
     public static string Refuse(string requestId)

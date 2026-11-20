@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MiniTranslator.Domain.Languages;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.ClaudeCli.Tests;
@@ -48,9 +49,21 @@ public class ClaudeCliProtocolTests
     }
 
     [Fact]
+    public void Session_uses_the_chosen_model_and_effort_and_falls_back_to_the_defaults()
+    {
+        var chosen = ClaudeCliProtocol.Arguments(new EngineOptions("opus", "low")).ToList();
+        var defaults = ClaudeCliProtocol.Arguments(EngineOptions.Default).ToList();
+
+        Assert.Equal("opus", chosen[chosen.IndexOf("--model") + 1]);
+        Assert.Equal("low", chosen[chosen.IndexOf("--effort") + 1]);
+        Assert.Equal(ClaudeCliProtocol.DefaultModel, defaults[defaults.IndexOf("--model") + 1]);
+        Assert.DoesNotContain("--effort", defaults);
+    }
+
+    [Fact]
     public void Session_runs_without_tools_servers_commands_or_user_settings()
     {
-        var arguments = ClaudeCliProtocol.Arguments;
+        var arguments = ClaudeCliProtocol.Arguments(EngineOptions.Default).ToList();
 
         Assert.Equal("", arguments[arguments.IndexOf("--tools") + 1]);
         Assert.Equal("", arguments[arguments.IndexOf("--setting-sources") + 1]);

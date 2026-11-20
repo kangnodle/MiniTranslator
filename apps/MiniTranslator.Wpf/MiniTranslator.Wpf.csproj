@@ -17,7 +17,6 @@
     <ProjectReference Include="..\..\packages\presentation\MiniTranslator.Presentation\MiniTranslator.Presentation.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.ClaudeCli\MiniTranslator.Adapters.ClaudeCli.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.CodexCli\MiniTranslator.Adapters.CodexCli.csproj" />
-    <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.GoogleTranslate\MiniTranslator.Adapters.GoogleTranslate.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.JsonSettings\MiniTranslator.Adapters.JsonSettings.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.Windows\MiniTranslator.Adapters.Windows.csproj" />
   </ItemGroup>

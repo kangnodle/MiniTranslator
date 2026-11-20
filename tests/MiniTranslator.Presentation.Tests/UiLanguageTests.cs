@@ -129,11 +129,11 @@ public class UiLanguageTests
             UiText.All(UiLanguage.English).Select(entry => entry.Key).Order());
         Assert.Equal("Settings", UiText.Get("Settings", UiLanguage.English));
         Assert.Equal("설정", UiText.Get("Settings", UiLanguage.Korean));
-        Assert.Contains("Please try again later", UiText.Error(TranslationErrors.RateLimited, UiLanguage.English));
-        Assert.Equal(TranslationErrors.RateLimited.Message, UiText.Error(TranslationErrors.RateLimited, UiLanguage.Korean));
+        Assert.Contains("did not respond in time", UiText.Error(TranslationErrors.ClaudeTimedOut, UiLanguage.English));
+        Assert.Equal(TranslationErrors.ClaudeTimedOut.Message, UiText.Error(TranslationErrors.ClaudeTimedOut, UiLanguage.Korean));
         Assert.Contains("Ctrl + Space", UiText.Error(HotkeyErrors.AlreadyInUse(HotkeyGesture.Default), UiLanguage.English));
-        Assert.Equal("The translation service rejected the request. (HTTP 429)\nquota exceeded",
-            UiText.Error(TranslationErrors.ProviderRejected(429, "quota exceeded"), UiLanguage.English));
+        Assert.Equal("Claude could not complete the translation. Check your sign-in with 'claude auth status' in a terminal, then try again.\nquota exceeded",
+            UiText.Error(TranslationErrors.ClaudeFailed("quota exceeded"), UiLanguage.English));
         Assert.Contains("5,001", UiText.Error(TranslationErrors.TooLong(5001), UiLanguage.English));
         Assert.Equal("technical detail", UiText.Error(new Error("Unknown", "technical detail"), UiLanguage.English));
     }

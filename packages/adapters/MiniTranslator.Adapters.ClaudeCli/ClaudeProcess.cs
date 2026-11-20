@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using MiniTranslator.Domain.Settings;
 
 namespace MiniTranslator.Adapters.ClaudeCli;
 
@@ -10,7 +11,7 @@ internal sealed class ClaudeProcess : IClaudeProcess
 
     private ClaudeProcess(Process process) => _process = process;
 
-    public static ClaudeProcess Start()
+    public static ClaudeProcess Start(EngineOptions options)
     {
         var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         var startInfo = new ProcessStartInfo(ClaudeCliProtocol.Executable)
@@ -26,7 +27,7 @@ internal sealed class ClaudeProcess : IClaudeProcess
             WorkingDirectory = Path.GetTempPath(),
         };
 
-        foreach (var argument in ClaudeCliProtocol.Arguments)
+        foreach (var argument in ClaudeCliProtocol.Arguments(options))
         {
             startInfo.ArgumentList.Add(argument);
         }

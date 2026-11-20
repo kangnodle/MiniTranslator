@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 using MiniTranslator.Domain.Languages;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.ClaudeCli.Tests;
@@ -46,6 +47,22 @@ public class ClaudeCliTranslatorTests
         using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
 
         Assert.Empty(sessions.Started);
+    }
+
+    [Fact]
+    public async Task Starts_a_new_session_with_the_new_model_and_effort_once_they_change()
+    {
+        var sessions = new Sessions(FakeProcess.Echoing);
+        var options = new EngineOptions("opus", "low");
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, () => options);
+
+        await translator.TranslateAsync(Request());
+        await translator.TranslateAsync(Request());
+        options = new EngineOptions("haiku", "");
+        await translator.TranslateAsync(Request());
+
+        Assert.Equal([new EngineOptions("opus", "low"), new EngineOptions("haiku", "")], sessions.Options);
+        Assert.True(sessions.Started[0].Disposed);
     }
 
     [Fact]
@@ -118,7 +135,7 @@ public class ClaudeCliTranslatorTests
     [Fact]
     public async Task Reports_a_missing_cli()
     {
-        using var translator = new ClaudeCliTranslator(() => throw new Win32Exception(2), Generous);
+        using var translator = new ClaudeCliTranslator(_ => throw new Win32Exception(2), Generous);
 
         var result = await translator.TranslateAsync(Request());
 
@@ -175,10 +192,13 @@ public class ClaudeCliTranslatorTests
     {
         public List<FakeProcess> Started { get; } = [];
 
-        public IClaudeProcess Start()
+        public List<EngineOptions> Options { get; } = [];
+
+        public IClaudeProcess Start(EngineOptions options)
         {
             var process = new FakeProcess(respond);
             Started.Add(process);
+            Options.Add(options);
             return process;
         }
     }

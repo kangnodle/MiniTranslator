@@ -121,6 +121,18 @@ public class CodexCliProtocolTests
     }
 
     [Fact]
+    public void Chosen_model_and_effort_are_sent_and_an_unset_effort_is_left_to_codex()
+    {
+        var thread = Parameters(CodexCliProtocol.StartThread(3, @"C:\Temp\work", "gpt-custom"), 3, "thread/start");
+        var turn = Parameters(CodexCliProtocol.StartTurn(4, "thread-1", Request(), "low"), 4, "turn/start");
+        var defaultTurn = Parameters(CodexCliProtocol.StartTurn(4, "thread-1", Request()), 4, "turn/start");
+
+        Assert.Equal("gpt-custom", thread.GetProperty("model").GetString());
+        Assert.Equal("low", turn.GetProperty("effort").GetString());
+        Assert.Equal(JsonValueKind.Null, defaultTurn.GetProperty("effort").ValueKind);
+    }
+
+    [Fact]
     public void Thread_is_a_read_only_text_generator_that_saves_nothing()
     {
         var parameters = Parameters(CodexCliProtocol.StartThread(3, @"C:\Temp\work"), 3, "thread/start");
@@ -130,7 +142,7 @@ public class CodexCliProtocolTests
         Assert.Equal("read-only", parameters.GetProperty("sandbox").GetString());
         Assert.Equal("never", parameters.GetProperty("approvalPolicy").GetString());
         Assert.Equal(@"C:\Temp\work", parameters.GetProperty("cwd").GetString());
-        Assert.Equal(CodexCliProtocol.Model, parameters.GetProperty("model").GetString());
+        Assert.Equal(CodexCliProtocol.DefaultModel, parameters.GetProperty("model").GetString());
         Assert.Equal(CodexCliProtocol.SystemPrompt, parameters.GetProperty("baseInstructions").GetString());
         Assert.Equal(0, config.GetProperty("project_doc_max_bytes").GetInt32());
         Assert.False(config.GetProperty("skills.include_instructions").GetBoolean());

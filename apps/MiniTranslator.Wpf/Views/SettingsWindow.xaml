@@ -157,10 +157,45 @@
                         <ComboBox x:Name="EngineBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
                                   AutomationProperties.Name="{DynamicResource TranslationEngine}"
                                   SelectedValuePath="Tag" SelectedValue="{Binding Engine}">
-                            <ComboBoxItem Content="{DynamicResource EngineGoogle}" Tag="{x:Static settings:TranslationEngine.Google}" />
                             <ComboBoxItem Content="{DynamicResource EngineClaude}" Tag="{x:Static settings:TranslationEngine.Claude}" />
                             <ComboBoxItem Content="{DynamicResource EngineCodex}" Tag="{x:Static settings:TranslationEngine.Codex}" />
                         </ComboBox>
+                        <StackPanel Margin="0,16,0,0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Engine}" Value="{x:Static settings:TranslationEngine.Claude}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineModel}"
+                                   Target="{Binding ElementName=ClaudeModelBox}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource ClaudeModelHint}" />
+                            <ComboBox x:Name="ClaudeModelBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
+                                      AutomationProperties.Name="{DynamicResource EngineModel}"
+                                      Text="{Binding ClaudeModel, UpdateSourceTrigger=PropertyChanged}">
+                                <ComboBoxItem Content="sonnet" />
+                                <ComboBoxItem Content="opus" />
+                                <ComboBoxItem Content="haiku" />
+                            </ComboBox>
+                            <StackPanel Margin="0,16,0,0">
+                                <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineEffort}"
+                                       Target="{Binding ElementName=ClaudeEffortBox}" />
+                                <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource EngineEffortHint}" />
+                                <ComboBox x:Name="ClaudeEffortBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
+                                          AutomationProperties.Name="{DynamicResource EngineEffort}"
+                                          Text="{Binding ClaudeEffort, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBoxItem Content="low" />
+                                    <ComboBoxItem Content="medium" />
+                                    <ComboBoxItem Content="high" />
+                                    <ComboBoxItem Content="xhigh" />
+                                    <ComboBoxItem Content="max" />
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
                         <StackPanel Margin="0,16,0,0">
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
@@ -172,6 +207,24 @@
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Style>
+                            <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineModel}"
+                                   Target="{Binding ElementName=CodexModelBox}" />
+                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexModelHint}" />
+                            <TextBox x:Name="CodexModelBox" Margin="0,12,0,0" HorizontalAlignment="Stretch"
+                                     AutomationProperties.Name="{DynamicResource EngineModel}"
+                                     Text="{Binding CodexModel, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Margin="0,16,0,16">
+                                <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource EngineEffort}"
+                                       Target="{Binding ElementName=CodexEffortBox}" />
+                                <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource EngineEffortHint}" />
+                                <ComboBox x:Name="CodexEffortBox" Margin="0,12,0,0" HorizontalAlignment="Stretch" IsEditable="True"
+                                          AutomationProperties.Name="{DynamicResource EngineEffort}"
+                                          Text="{Binding CodexEffort, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBoxItem Content="low" />
+                                    <ComboBoxItem Content="medium" />
+                                    <ComboBoxItem Content="high" />
+                                </ComboBox>
+                            </StackPanel>
                             <Label Style="{StaticResource FieldLabelStyle}" Content="{DynamicResource CodexExecutablePath}"
                                    Target="{Binding ElementName=CodexExecutablePathBox}" />
                             <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{DynamicResource CodexExecutablePathHint}" />

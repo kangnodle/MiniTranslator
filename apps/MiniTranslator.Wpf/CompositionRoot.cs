@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MiniTranslator.Adapters.ClaudeCli;
 using MiniTranslator.Adapters.CodexCli;
-using MiniTranslator.Adapters.GoogleTranslate;
 using MiniTranslator.Adapters.JsonSettings;
 using MiniTranslator.Adapters.Windows;
 using MiniTranslator.Application.Abstractions;
@@ -20,7 +19,6 @@ internal static class CompositionRoot
     public static ServiceProvider Build() =>
         new ServiceCollection()
             .AddCore()
-            .AddGoogleTranslator()
             .AddClaudeCliTranslator()
             .AddCodexCliTranslator(System.IO.Path.Combine(AppPaths.Default.Root, "codex"))
             .AddJsonSettings()

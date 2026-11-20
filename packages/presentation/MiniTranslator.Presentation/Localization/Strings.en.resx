@@ -96,9 +96,6 @@ Look for its icon in the system tray.</value></data>
   <data name="Translation.EmptyText" xml:space="preserve"><value>Enter some text to translate.</value></data>
   <data name="Translation.TooLong" xml:space="preserve"><value>You can translate up to 5,000 characters at a time. (Currently {0} characters)</value></data>
   <data name="Translation.EmptyResponse" xml:space="preserve"><value>The translation service returned an empty response.</value></data>
-  <data name="Translation.RateLimited" xml:space="preserve"><value>Google has temporarily limited translation requests. (HTTP 429) Please try again later. The public translation service may block automated requests from your network.</value></data>
-  <data name="Translation.ProviderRejected" xml:space="preserve"><value>The translation service rejected the request. (HTTP {0})</value></data>
-  <data name="Translation.Network" xml:space="preserve"><value>Cannot connect to the translation service. Check your network connection.</value></data>
   <data name="Settings.SaveFailed" xml:space="preserve"><value>Could not save the settings.</value></data>
   <data name="Clipboard.Busy" xml:space="preserve"><value>The clipboard is unavailable. Try again shortly.</value></data>
   <data name="Startup.ReadFailed" xml:space="preserve"><value>Could not read the startup setting.</value></data>
@@ -106,10 +103,14 @@ Look for its icon in the system tray.</value></data>
   <data name="Startup.InvalidExecutable" xml:space="preserve"><value>Could not register startup. Run the installed MiniTranslator.exe and keep its full path within 258 characters.</value></data>
   <data name="AllRightsReserved" xml:space="preserve"><value>All rights reserved.</value></data>
   <data name="TranslationEngine" xml:space="preserve"><value>Translation engine</value></data>
-  <data name="TranslationEngineHint" xml:space="preserve"><value>Google is fast and needs no sign-in. Claude and Codex handle context and tone better but take 1–3 seconds longer, and need Claude Code or the Codex CLI installed and signed in.</value></data>
-  <data name="EngineGoogle" xml:space="preserve"><value>Google Translate</value></data>
+  <data name="TranslationEngineHint" xml:space="preserve"><value>Claude and Codex translate through Claude Code or the Codex CLI, which must be installed and signed in. A translation takes about 1–3 seconds.</value></data>
   <data name="EngineClaude" xml:space="preserve"><value>Claude (uses your Claude Code sign-in)</value></data>
   <data name="EngineCodex" xml:space="preserve"><value>Codex (uses your ChatGPT sign-in)</value></data>
+  <data name="EngineModel" xml:space="preserve"><value>Model</value></data>
+  <data name="ClaudeModelHint" xml:space="preserve"><value>Leave empty to use sonnet. Enter an alias such as opus or haiku, or a full model name.</value></data>
+  <data name="CodexModelHint" xml:space="preserve"><value>Leave empty to use gpt-6.1-terra. Enter any model name available in Codex.</value></data>
+  <data name="EngineEffort" xml:space="preserve"><value>Effort</value></data>
+  <data name="EngineEffortHint" xml:space="preserve"><value>Leave empty for the CLI default. Lower is faster. Model and effort apply from the next translation after saving.</value></data>
   <data name="CodexExecutablePath" xml:space="preserve"><value>Codex executable path (optional)</value></data>
   <data name="CodexAccount" xml:space="preserve"><value>Codex sign-in</value></data>
   <data name="CodexAccountHint" xml:space="preserve"><value>Sign in with your ChatGPT account. The Codex CLI keeps the sign-in in a profile used only by MiniTranslator.</value></data>
@@ -124,10 +125,10 @@ Look for its icon in the system tray.</value></data>
   <data name="CodexSignInCancel" xml:space="preserve"><value>Cancel sign-in</value></data>
   <data name="CodexExecutablePathHint" xml:space="preserve"><value>Leave empty to find codex on PATH. Enter the full path to codex.exe only when it is not on PATH.</value></data>
   <data name="Settings.InvalidEngine" xml:space="preserve"><value>Select a valid translation engine.</value></data>
-  <data name="Translation.ClaudeUnavailable" xml:space="preserve"><value>Could not run Claude Code. Install Claude Code and sign in with 'claude auth login' in a terminal, or switch the translation engine to Google in Settings.</value></data>
+  <data name="Translation.ClaudeUnavailable" xml:space="preserve"><value>Could not run Claude Code. Install Claude Code and sign in with 'claude auth login' in a terminal, or switch the translation engine to Codex in Settings.</value></data>
   <data name="Translation.ClaudeFailed" xml:space="preserve"><value>Claude could not complete the translation. Check your sign-in with 'claude auth status' in a terminal, then try again.</value></data>
   <data name="Translation.ClaudeTimedOut" xml:space="preserve"><value>Claude did not respond in time. Try again.</value></data>
-  <data name="Translation.CodexUnavailable" xml:space="preserve"><value>Could not run the Codex CLI. Install the Codex CLI and add it to PATH, or set the Codex executable path in Settings. You can also switch the translation engine to Google.</value></data>
+  <data name="Translation.CodexUnavailable" xml:space="preserve"><value>Could not run the Codex CLI. Install the Codex CLI and add it to PATH, or set the Codex executable path in Settings. You can also switch the translation engine to Claude.</value></data>
   <data name="Translation.CodexSignedOut" xml:space="preserve"><value>Codex is not signed in. Sign in to Codex under Settings → Translation engine, then try again.</value></data>
   <data name="Translation.CodexFailed" xml:space="preserve"><value>Codex could not complete the translation. Try again.</value></data>
   <data name="Translation.CodexTimedOut" xml:space="preserve"><value>Codex did not respond in time. Try again.</value></data>

@@ -31,6 +31,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         _uiLanguage = current.UiLanguage;
         _engine = current.Engine;
         _codexExecutablePath = current.CodexExecutablePath;
+        _claudeModel = current.Claude.Model;
+        _claudeEffort = current.Claude.Effort;
+        _codexModel = current.Codex.Model;
+        _codexEffort = current.Codex.Effort;
         _hotkey = current.Hotkey;
         _languages = current.Languages;
         _sourceLanguage = _languages.Source;
@@ -194,6 +198,18 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string _codexExecutablePath;
 
     [ObservableProperty]
+    private string _claudeModel;
+
+    [ObservableProperty]
+    private string _claudeEffort;
+
+    [ObservableProperty]
+    private string _codexModel;
+
+    [ObservableProperty]
+    private string _codexEffort;
+
+    [ObservableProperty]
     private string? _codexAccountText;
 
     [ObservableProperty]
@@ -305,7 +321,13 @@ public sealed partial class SettingsViewModel : ObservableObject
             Hotkey,
             _languages,
             new BehaviorSettings(CaptureSelectionOnHotkey, HideOnDeactivate, AutoTranslateOnCapture))
-        { UiLanguage = UiLanguage, Engine = Engine, CodexExecutablePath = CodexExecutablePath ?? string.Empty };
+        {
+            UiLanguage = UiLanguage,
+            Engine = Engine,
+            CodexExecutablePath = CodexExecutablePath ?? string.Empty,
+            Claude = EngineOptions.Create(ClaudeModel, ClaudeEffort),
+            Codex = EngineOptions.Create(CodexModel, CodexEffort),
+        };
 
         var saved = await _editor.SaveAsync(draft, StartWithWindows);
         if (saved.Settings.IsFailure)

@@ -17,7 +17,18 @@ internal sealed class SettingsDocument
 
     public string? CodexExecutablePath { get; set; }
 
+    public EngineDocument? Claude { get; set; }
+
+    public EngineDocument? Codex { get; set; }
+
     public BehaviorDocument? Behavior { get; set; }
+
+    internal sealed class EngineDocument
+    {
+        public string? Model { get; set; }
+
+        public string? Effort { get; set; }
+    }
 
     internal sealed class BehaviorDocument
     {

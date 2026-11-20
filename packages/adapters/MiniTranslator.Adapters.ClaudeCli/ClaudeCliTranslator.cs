@@ -1,16 +1,21 @@
 using System.ComponentModel;
 using MiniTranslator.Application.Abstractions;
 using MiniTranslator.Domain.Common;
+using MiniTranslator.Domain.Settings;
 using MiniTranslator.Domain.Translations;
 
 namespace MiniTranslator.Adapters.ClaudeCli;
 
-internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, TimeSpan timeout) : ITranslator, IDisposable
+internal sealed class ClaudeCliTranslator(
+    Func<EngineOptions, IClaudeProcess> startProcess,
+    TimeSpan timeout,
+    Func<EngineOptions>? currentOptions = null) : ITranslator, IDisposable
 {
     public const int MaxTurnsPerSession = 20;
 
     private readonly SemaphoreSlim _turn = new(1, 1);
     private IClaudeProcess? _session;
+    private EngineOptions _sessionOptions = EngineOptions.Default;
     private int _turns;
 
     public async Task<Result<TranslationResult>> TranslateAsync(
@@ -22,6 +27,13 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
         {
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             deadline.CancelAfter(timeout);
+
+            var options = currentOptions?.Invoke() ?? EngineOptions.Default;
+            if (options != _sessionOptions)
+            {
+                EndSession();
+                _sessionOptions = options;
+            }
 
             var reusedSession = _session is not null && _turns < MaxTurnsPerSession;
             var result = await ExchangeAsync(request, deadline.Token);
@@ -68,7 +80,7 @@ internal sealed class ClaudeCliTranslator(Func<IClaudeProcess> startProcess, Tim
 
         try
         {
-            _session ??= startProcess();
+            _session ??= startProcess(_sessionOptions);
             await _session.WriteLineAsync(ClaudeCliProtocol.BuildMessage(request), cancellationToken);
 
             while (await _session.ReadLineAsync(cancellationToken) is { } line)

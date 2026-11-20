@@ -15,6 +15,8 @@ internal static class SettingsMapper
         UiLanguage = settings.UiLanguage.ToString(),
         Engine = settings.Engine.ToString(),
         CodexExecutablePath = settings.CodexExecutablePath.Length == 0 ? null : settings.CodexExecutablePath,
+        Claude = ToDocument(settings.Claude),
+        Codex = ToDocument(settings.Codex),
         Behavior = new SettingsDocument.BehaviorDocument
         {
             CaptureSelectionOnHotkey = settings.Behavior.CaptureSelectionOnHotkey,
@@ -47,6 +49,17 @@ internal static class SettingsMapper
             Engine = Enum.TryParse<TranslationEngine>(document.Engine, ignoreCase: true, out var engine) && Enum.IsDefined(engine)
                 ? engine : defaults.Engine,
             CodexExecutablePath = AppSettings.NormalizePath(document.CodexExecutablePath),
+            Claude = EngineOptions.Create(document.Claude?.Model, document.Claude?.Effort),
+            Codex = EngineOptions.Create(document.Codex?.Model, document.Codex?.Effort),
         };
     }
+
+    private static SettingsDocument.EngineDocument? ToDocument(EngineOptions options) =>
+        options == EngineOptions.Default
+            ? null
+            : new SettingsDocument.EngineDocument
+            {
+                Model = options.Model.Length == 0 ? null : options.Model,
+                Effort = options.Effort.Length == 0 ? null : options.Effort,
+            };
 }

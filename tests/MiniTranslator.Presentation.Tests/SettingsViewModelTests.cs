@@ -173,12 +173,27 @@ public class SettingsViewModelTests
     public async Task Save_applies_the_chosen_translation_engine()
     {
         var (vm, repository, _) = Create();
-        Assert.Equal(TranslationEngine.Google, vm.Engine);
+        Assert.Equal(TranslationEngine.Claude, vm.Engine);
 
-        vm.Engine = TranslationEngine.Claude;
+        vm.Engine = TranslationEngine.Codex;
         await vm.SaveCommand.ExecuteAsync(null);
 
-        Assert.Equal(TranslationEngine.Claude, repository.Saved?.Engine);
+        Assert.Equal(TranslationEngine.Codex, repository.Saved?.Engine);
+    }
+
+    [Fact]
+    public async Task Save_applies_the_model_and_effort_of_each_engine()
+    {
+        var (vm, repository, _) = Create();
+        Assert.Equal("", vm.ClaudeModel);
+
+        vm.ClaudeModel = " opus ";
+        vm.ClaudeEffort = "low";
+        vm.CodexEffort = "high";
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal(new EngineOptions("opus", "low"), repository.Saved?.Claude);
+        Assert.Equal(new EngineOptions("", "high"), repository.Saved?.Codex);
     }
 
     [Fact]

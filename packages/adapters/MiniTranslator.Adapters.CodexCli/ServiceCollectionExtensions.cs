@@ -14,7 +14,8 @@ public static class ServiceCollectionExtensions
             var settings = provider.GetRequiredService<SettingsStore>();
             return new CodexCliTranslator(
                 () => CodexProcess.Start(CodexCliProtocol.Executables(settings.Current.CodexExecutablePath), home),
-                TimeSpan.FromSeconds(90));
+                TimeSpan.FromSeconds(90),
+                () => settings.Current.Codex);
         });
         services.AddKeyedSingleton<ITranslator>(TranslationEngine.Codex, (provider, _) => provider.GetRequiredService<CodexCliTranslator>());
 

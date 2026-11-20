@@ -1,14 +1,14 @@
 # MiniTranslator
 
 .NET 11 · C# · WPF로 만든 Windows 상주형 미니 번역기입니다.
-전역 단축키(기본 `Ctrl + Space`)로 어디서든 번역 창을 열고, 로그인이나 API 키 없이 Google 번역으로 번역합니다. 설정에서 번역 엔진을 Claude나 Codex로 바꿀 수도 있습니다.
+전역 단축키(기본 `Ctrl + Space`)로 어디서든 번역 창을 열고, PC에 설치된 Claude Code CLI 또는 Codex CLI의 로그인으로 번역합니다. API 키는 필요 없습니다.
 
 ## 주요 기능
 
 | 기능 | 설명 |
 | --- | --- |
 | 전역 단축키 변경 | 설정 → 단축키 입력란을 클릭하고 원하는 조합을 누르면 기록됩니다. `Ctrl`·`Alt`·`Win` 중 하나 이상 필요 (Shift 단독 불가). 다른 앱이 이미 사용 중이면 이전 단축키가 그대로 유지됩니다. |
-| 번역 엔진 선택 | 설정 → 번역 엔진에서 **Google 번역**(기본값), **Claude**, **Codex** 중 하나를 고릅니다. 저장하면 다음 번역부터 적용됩니다. |
+| 번역 엔진 선택 | 설정 → 번역 엔진에서 **Claude**(기본값), **Codex** 중 하나를 고릅니다. 저장하면 다음 번역부터 적용됩니다. 엔진마다 **모델**과 **Effort**(추론 강도)를 지정할 수 있고, 비워 두면 기본값을 씁니다. |
 | 출발/도착 언어 | 번역 창 상단 또는 설정에서 변경. 기본값 **영어 → 한국어**. 출발 언어는 `자동 감지` 가능, 같은 언어를 고르면 자동으로 서로 바뀝니다. |
 | Windows Fluent UI/UX | .NET 11 WPF 내장 Fluent 테마 사용 — Fluent 타이포그래피·카드·강조 버튼·인라인 오류 안내. 넓은 창에서는 원문/결과가 나란히 배치됩니다. |
 | 앱 테마 | 설정 → 모양에서 **시스템 / 라이트 / 다크 / Tomorrow Night Blue / Solarized Light / Solarized Dark**를 콤보박스로 선택합니다. 열린 모든 창에 즉시 적용·자동 저장하며, 다음 실행에도 유지됩니다. 시스템은 Windows 테마를 따릅니다. |
@@ -33,30 +33,26 @@
 
 ## 번역 서비스
 
-Google 번역의 공개 엔드포인트(`translate.googleapis.com/translate_a/single`, `client=gtx`)를 사용하므로 **Google 계정 로그인, API 키, Google Cloud 프로젝트가 필요 없습니다.**
-
-번역은 URL 인코딩한 텍스트를 GET 요청으로 전송합니다. 공개 엔드포인트는 Google의 자동화 요청 차단이나 네트워크 단위 제한으로 HTTP 429를 반환할 수 있습니다. 이 경우 잠시 후 다시 시도하세요. 요청 방식을 수정해도 Google 측 차단을 해제할 수는 없습니다.
-
-> 이 엔드포인트는 공식 지원 API가 아닙니다. 사전 공지 없이 바뀌거나, 짧은 시간에 요청이 많으면 일시적으로 차단(HTTP 429)될 수 있습니다.
+번역은 PC에 설치된 Claude Code CLI 또는 Codex CLI가 수행하며, 각 CLI의 로그인으로 인증합니다. 둘 중 하나는 설치되어 있고 로그인되어 있어야 합니다. 이전 버전에서 Google 번역을 쓰던 설정은 Claude로 바뀝니다.
 
 설정 저장 위치: `%APPDATA%\MiniTranslator\settings.json`
 
-### Claude 엔진 (선택)
+### Claude 엔진 (기본값)
 
-설정에서 번역 엔진을 Claude로 바꾸면 PC에 설치된 [Claude Code](https://claude.com/claude-code) CLI(`claude`)를 통해 번역합니다. 문맥·어조·관용구는 Google보다 잘 살리지만 느립니다(측정값: 번역 한 건에 약 1.3~3.5초, Google은 약 0.3초).
+기본 번역 엔진은 PC에 설치된 [Claude Code](https://claude.com/claude-code) CLI(`claude`)를 통해 번역합니다(측정값: 번역 한 건에 약 1.3~3.5초).
 
 - **준비**: Claude Code를 설치하고 터미널에서 `claude auth login`으로 로그인합니다. MiniTranslator는 토큰이나 API 키를 다루지 않으며, 로그인과 자격 증명은 CLI가 관리합니다.
-- **동작**: 첫 번역 때 `claude` 프로세스 하나를 띄워 계속 재사용하고(모델 `sonnet`), 앱을 종료하면 함께 종료합니다. 번역 20건마다, 그리고 오류·취소·시간 초과(90초) 뒤에는 새 프로세스로 교체합니다.
+- **동작**: 첫 번역 때 `claude` 프로세스 하나를 띄워 계속 재사용하고(기본 모델 `sonnet`), 앱을 종료하면 함께 종료합니다. 번역 20건마다, 그리고 오류·취소·시간 초과(90초) 뒤에는 그리고 설정에서 모델이나 Effort를 바꾼 뒤에는 새 프로세스로 교체합니다.
 - **격리**: 도구, MCP 서버, 슬래시 명령, 사용자의 Claude Code 설정·훅·메모리 파일을 모두 끈 채로 실행하므로 번역할 텍스트는 번역 대상으로만 쓰입니다.
 - **제한**: 번역할 때마다 Claude 구독 사용량을 소모합니다. 출발 언어가 `자동 감지`일 때 감지된 언어를 알려주지 않으므로, 그 상태에서는 언어 바꾸기를 쓸 수 없습니다. 결과는 완료된 뒤 한 번에 표시됩니다.
 
-### Codex 엔진 (선택)
+### Codex 엔진
 
 설정에서 번역 엔진을 Codex로 바꾸면 PC에 설치된 [Codex CLI](https://github.com/openai/codex)(`codex`)를 `codex app-server`로 띄워 ChatGPT 구독 로그인으로 번역합니다. 측정값은 번역 한 건에 약 1.4~2.7초이고, 첫 번역과 세션 교체 직후는 5~6초, 4,000자가 넘는 긴 원문은 30초 이상 걸립니다.
 
 - **준비**: Codex CLI를 설치합니다. `codex`가 PATH에 없으면 설정 → 번역 엔진 → **Codex 실행 파일 경로**에 `codex.exe`의 전체 경로를 입력합니다. 경로를 입력하면 그 경로를 먼저 쓰고, 실행할 수 없을 때 PATH의 `codex`를 찾습니다.
 - **로그인**: 설정 → 번역 엔진에서 Codex를 고르면 로그인 상태가 표시됩니다. **로그인**을 누르면 브라우저에 OpenAI 로그인 페이지가 열리고, 거기서 ChatGPT 계정으로 승인하면 설정 창에 자동으로 반영됩니다(제한 시간 5분, 도중에 취소 가능). **로그아웃**도 같은 곳에서 합니다. 로그인과 로그아웃은 테마처럼 즉시 적용되며 설정을 취소해도 되돌려지지 않습니다. MiniTranslator 전용 프로필 `%APPDATA%\MiniTranslator\codex`를 쓰므로 평소 쓰는 Codex 로그인과는 별개입니다. MiniTranslator는 토큰이나 API 키를 다루지 않으며, 로그인 절차와 자격 증명 보관은 CLI가 맡습니다. CLI가 알려 준 주소가 `https://auth.openai.com`이 아니면 브라우저를 열지 않습니다.
-- **동작**: 첫 번역 때 프로세스 하나와 스레드 하나를 만들어 계속 재사용하고(모델 `gpt-6.1-terra`), 앱을 종료하면 함께 종료합니다. 번역 20건마다, 그리고 오류·취소·시간 초과(90초) 뒤에는 새 프로세스로 교체합니다.
+- **동작**: 첫 번역 때 프로세스 하나와 스레드 하나를 만들어 계속 재사용하고(기본 모델 `gpt-6.1-terra`), 앱을 종료하면 함께 종료합니다. 번역 20건마다, 그리고 오류·취소·시간 초과(90초) 뒤에는 그리고 설정에서 모델이나 Effort를 바꾼 뒤에는 새 프로세스로 교체합니다.
 - **격리**: 전용 프로필이라 사용자의 Codex 설정·지침·기록이 섞이지 않습니다. 스레드는 저장하지 않고, 읽기 전용 샌드박스에서 네트워크와 승인 없이 실행하며, 셸·앱·플러그인·브라우저·웹 검색 등 에이전트 기능을 끕니다. Codex가 승인이나 도구 실행을 요청하면 모두 거절합니다. `OPENAI_API_KEY` 등 API 키 환경 변수는 CLI에 전달하지 않습니다.
 - **제한**: 번역할 때마다 ChatGPT 구독 사용량을 소모합니다. 감지된 언어를 알려주지 않으므로 출발 언어가 `자동 감지`일 때는 언어 바꾸기를 쓸 수 없습니다. 결과는 완료된 뒤 한 번에 표시됩니다. `codex app-server`는 실험적 인터페이스라 Codex CLI 버전에 따라 동작이 달라질 수 있습니다(확인한 버전: 0.169).
 
@@ -82,7 +78,6 @@ MiniTranslator/
 │   └── adapters/
 │       ├── MiniTranslator.Adapters.ClaudeCli/         ITranslator  — Claude Code CLI 프로세스 (net11.0)
 │       ├── MiniTranslator.Adapters.CodexCli/          ITranslator · ICodexAccount — Codex CLI app-server 프로세스 (net11.0)
-│       ├── MiniTranslator.Adapters.GoogleTranslate/   ITranslator  — HTTP               (net11.0)
 │       ├── MiniTranslator.Adapters.JsonSettings/      ISettingsRepository — 파일        (net11.0)
 │       └── MiniTranslator.Adapters.Windows/           IGlobalHotkey · IClipboard · ITextSelectionReader — Win32 (net11.0-windows)
 └── tests/
@@ -101,7 +96,7 @@ Clean Architecture — 의존성은 항상 안쪽(Domain)을 향합니다.
                │            │                    │
                ▼            ▼                    ▼
         Presentation    Adapters.*  ──implements──►  Application.Abstractions (포트)
- (ViewModels)   Google · Claude · Codex · Json · Windows │
+ (ViewModels)   Claude · Codex · Json · Windows          │
                │            │                            │
                └────────────┴──────►  Application  ◄─────┘
                                            │
@@ -127,7 +122,6 @@ Clean Architecture — 의존성은 항상 안쪽(Domain)을 향합니다.
 | --- | --- | --- |
 | Domain | 전부 — `HotkeyGesture`, `LanguagePair`, `AppSettings.MergeDraft`·`WithTheme`(설정 병합·검증), `TranslationResult.DetectionNote`, `HotkeyModifiers.Names()` | — |
 | Application | Domain의 규칙으로 변경할 값을 결정 | `SettingsEditor`(설정 편집·저장·자동 실행 복구), `SettingsStore`(상태+저장), `HotkeyManager`(등록 상태), 번역·선택 텍스트 유스케이스 |
-| GoogleTranslate | `GoogleTranslateProtocol` (GET URI 생성, 응답 파싱) | `GoogleTranslator` (HTTP) |
 | ClaudeCli | `ClaudeCliProtocol` (실행 인자, 메시지 생성, 이벤트 파싱) | `ClaudeCliTranslator` (세션 수명·재시도·시간 제한), `ClaudeProcess` (자식 프로세스) |
 | CodexCli | `CodexCliProtocol` (실행 인자, JSON-RPC 요청 생성, 메시지 파싱, 로그인 페이지 검증) | `CodexCliTranslator` (세션 수명·로그인 확인·재시도·시간 제한), `CodexCliAccount` (로그인·로그아웃), `CodexConnection` (요청·응답 짝짓기), `CodexProcess` (자식 프로세스·브라우저 열기) |
 | JsonSettings | `SettingsMapper` (문서 ↔ 도메인) | `JsonSettingsRepository` (파일) |

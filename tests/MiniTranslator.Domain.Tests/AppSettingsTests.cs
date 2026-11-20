@@ -68,20 +68,26 @@ public class AppSettingsTests
     }
 
     [Fact]
-    public void Google_is_the_default_engine()
+    public void Captured_text_is_translated_immediately_by_default()
     {
-        Assert.Equal(TranslationEngine.Google, AppSettings.Default.Engine);
+        Assert.True(AppSettings.Default.Behavior.AutoTranslateOnCapture);
+    }
+
+    [Fact]
+    public void Claude_is_the_default_engine()
+    {
+        Assert.Equal(TranslationEngine.Claude, AppSettings.Default.Engine);
     }
 
     [Fact]
     public void An_edited_engine_wins_and_an_untouched_one_keeps_the_value_saved_elsewhere()
     {
         var original = AppSettings.Default;
-        var current = original with { Engine = TranslationEngine.Claude };
+        var current = original with { Engine = TranslationEngine.Codex };
 
-        Assert.Equal(TranslationEngine.Claude, current.MergeDraft(original, original).Value.Engine);
-        Assert.Equal(TranslationEngine.Claude,
-            original.MergeDraft(original with { Engine = TranslationEngine.Claude }, original).Value.Engine);
+        Assert.Equal(TranslationEngine.Codex, current.MergeDraft(original, original).Value.Engine);
+        Assert.Equal(TranslationEngine.Codex,
+            original.MergeDraft(original with { Engine = TranslationEngine.Codex }, original).Value.Engine);
     }
 
     [Fact]

@@ -7,12 +7,12 @@ namespace MiniTranslator.Domain.Settings;
 public sealed record BehaviorSettings(
     bool CaptureSelectionOnHotkey,
     bool HideOnDeactivate,
-    bool AutoTranslateOnCapture = false)
+    bool AutoTranslateOnCapture = true)
 {
     public static BehaviorSettings Default { get; } = new(
         CaptureSelectionOnHotkey: true,
         HideOnDeactivate: true,
-        AutoTranslateOnCapture: false);
+        AutoTranslateOnCapture: true);
 }
 
 public sealed record AppSettings(
@@ -22,9 +22,13 @@ public sealed record AppSettings(
 {
     public AppTheme Theme { get; init; } = AppTheme.System;
     public UiLanguage UiLanguage { get; init; } = UiLanguage.Korean;
-    public TranslationEngine Engine { get; init; } = TranslationEngine.Google;
+    public TranslationEngine Engine { get; init; } = TranslationEngine.Claude;
 
     public string CodexExecutablePath { get; init; } = string.Empty;
+
+    public EngineOptions Claude { get; init; } = EngineOptions.Default;
+
+    public EngineOptions Codex { get; init; } = EngineOptions.Default;
 
     public Result<AppSettings> MergeDraft(AppSettings draft, AppSettings original)
     {
@@ -46,6 +50,8 @@ public sealed record AppSettings(
             Engine = draft.Engine == original.Engine ? Engine : draft.Engine,
             CodexExecutablePath = draft.CodexExecutablePath == original.CodexExecutablePath
                 ? CodexExecutablePath : NormalizePath(draft.CodexExecutablePath),
+            Claude = draft.Claude == original.Claude ? Claude : EngineOptions.Create(draft.Claude.Model, draft.Claude.Effort),
+            Codex = draft.Codex == original.Codex ? Codex : EngineOptions.Create(draft.Codex.Model, draft.Codex.Effort),
             Behavior = new BehaviorSettings(
                 draft.Behavior.CaptureSelectionOnHotkey == original.Behavior.CaptureSelectionOnHotkey
                     ? Behavior.CaptureSelectionOnHotkey : draft.Behavior.CaptureSelectionOnHotkey,
