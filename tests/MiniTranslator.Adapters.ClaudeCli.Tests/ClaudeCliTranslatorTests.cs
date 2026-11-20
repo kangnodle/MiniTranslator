@@ -188,6 +188,68 @@ public class ClaudeCliTranslatorTests
         Assert.True(sessions.Started[0].Disposed);
     }
 
+    [Fact]
+    public async Task Disposes_idle_session_after_idle_timeout()
+    {
+        var sessions = new Sessions(FakeProcess.Echoing);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, idleTimeout: TimeSpan.FromMilliseconds(40));
+
+        await translator.TranslateAsync(Request("one"));
+        Assert.False(sessions.Started[0].Disposed);
+
+        await WaitUntilAsync(() => sessions.Started[0].Disposed);
+        Assert.True(sessions.Started[0].Disposed);
+
+        var next = await translator.TranslateAsync(Request("two"));
+        Assert.Equal("[two]", next.Value.TranslatedText);
+        Assert.Equal(2, sessions.Started.Count);
+    }
+
+    [Fact]
+    public async Task Releasing_session_immediately_disposes_the_active_process()
+    {
+        var sessions = new Sessions(FakeProcess.Echoing);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+        await translator.TranslateAsync(Request("one"));
+
+        await translator.ReleaseSessionAsync();
+
+        Assert.True(sessions.Started[0].Disposed);
+    }
+
+    [Fact]
+    public async Task Reports_partial_stream_events_before_the_final_result()
+    {
+        var sessions = new Sessions(text =>
+        [
+            """{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"안"}}}""",
+            """{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"녕"}}}""",
+            JsonSerializer.Serialize(new { type = "result", subtype = "success", is_error = false, result = $"[{text}]" }),
+        ]);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+        var updates = new List<string>();
+        var progress = new SyncProgress(updates.Add);
+
+        var result = await translator.TranslateAsync(Request("Hello"), progress);
+
+        Assert.Equal("[Hello]", result.Value.TranslatedText);
+        Assert.Equal(["안", "안녕"], updates);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(15);
+        }
+    }
+
+    private sealed class SyncProgress(Action<string> report) : IProgress<string>
+    {
+        public void Report(string value) => report(value);
+    }
+
     private sealed class Sessions(Func<string, string[]?> respond)
     {
         public List<FakeProcess> Started { get; } = [];

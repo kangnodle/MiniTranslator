@@ -73,19 +73,59 @@ public class TranslationTimingTests
         Assert.False(viewModel.IsTranslating);
     }
 
+    [Fact]
+    public async Task Streaming_updates_translated_text_progressively_and_ignores_cancelled_streams()
+    {
+        var store = new SettingsStore(new InMemorySettingsRepository());
+        var translator = new DelayedTranslator();
+        var viewModel = Create(store, translator);
+        viewModel.SourceText = "hello";
+
+        var first = viewModel.TranslateCommand.ExecuteAsync(null);
+        translator.ReportPartial(0, "안");
+        await WaitUntilAsync(() => viewModel.TranslatedText == "안");
+        Assert.Equal("안", viewModel.TranslatedText);
+        Assert.True(viewModel.IsTranslating);
+
+        viewModel.ClearCommand.Execute(null);
+        translator.ReportPartial(0, "stale");
+        translator.Complete(0, "stale final");
+        await first;
+
+        Assert.Empty(viewModel.TranslatedText);
+        Assert.False(viewModel.IsTranslating);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
+    }
+
     private static TranslatorViewModel Create(SettingsStore store, ITranslator translator) =>
         new(new TranslateTextUseCase(translator), new ChangeLanguagesUseCase(store), store, new FakeClipboard());
 
     private sealed class DelayedTranslator : ITranslator
     {
-        public List<(TranslationRequest Request, CancellationToken Token, TaskCompletionSource<Result<TranslationResult>> Completion)> Requests { get; } = [];
+        public List<(TranslationRequest Request, CancellationToken Token, IProgress<string>? Progress, TaskCompletionSource<Result<TranslationResult>> Completion)> Requests { get; } = [];
 
-        public Task<Result<TranslationResult>> TranslateAsync(TranslationRequest request, CancellationToken cancellationToken = default)
+        public Task<Result<TranslationResult>> TranslateAsync(TranslationRequest request, CancellationToken cancellationToken = default) =>
+            TranslateAsync(request, onPartialText: null, cancellationToken);
+
+        public Task<Result<TranslationResult>> TranslateAsync(
+            TranslationRequest request,
+            IProgress<string>? onPartialText,
+            CancellationToken cancellationToken = default)
         {
             var completion = new TaskCompletionSource<Result<TranslationResult>>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Requests.Add((request, cancellationToken, completion));
+            Requests.Add((request, cancellationToken, onPartialText, completion));
             return completion.Task;
         }
+
+        public void ReportPartial(int index, string text) => Requests[index].Progress?.Report(text);
 
         public void Complete(int index, string text)
         {

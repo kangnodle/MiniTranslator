@@ -5,6 +5,13 @@ namespace MiniTranslator.Adapters.Windows;
 internal static partial class NativeMethods
 {
     public const int WM_HOTKEY = 0x0312;
+    public const int WM_APP = 0x8000;
+    public const int WM_LBUTTONUP = 0x0202;
+    public const int WM_RBUTTONUP = 0x0205;
+    public const int WM_CONTEXTMENU = 0x007B;
+    public const int NIN_SELECT = 0x0400;
+    public const int NIN_KEYSELECT = 0x0401;
+
     public const uint MOD_NOREPEAT = 0x4000;
 
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
@@ -17,6 +24,31 @@ internal static partial class NativeMethods
 
     public const uint INPUT_KEYBOARD = 1;
     public const uint KEYEVENTF_KEYUP = 0x0002;
+
+    public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    public const int ProcessPowerThrottling = 4;
+    public const uint PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1;
+    public const uint PROCESS_POWER_THROTTLING_EXECUTION_SPEED = 0x1;
+
+    public const uint NIM_ADD = 0x00000000;
+    public const uint NIM_MODIFY = 0x00000001;
+    public const uint NIM_DELETE = 0x00000002;
+    public const uint NIM_SETVERSION = 0x00000004;
+
+    public const uint NIF_MESSAGE = 0x00000001;
+    public const uint NIF_ICON = 0x00000002;
+    public const uint NIF_TIP = 0x00000004;
+    public const uint NIF_INFO = 0x00000010;
+    public const uint NIF_SHOWTIP = 0x00000080;
+
+    public const uint NIIF_INFO = 0x00000001;
+    public const uint NIIF_WARNING = 0x00000002;
+
+    public const uint NOTIFYICON_VERSION_4 = 4;
+
+    public const int SM_CXSMICON = 49;
+    public const int SM_CYSMICON = 50;
 
     public static readonly nint HWND_MESSAGE = -3;
 
@@ -44,6 +76,10 @@ internal static partial class NativeMethods
     public static partial nint GetForegroundWindow();
 
     [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool SetForegroundWindow(nint hWnd);
+
+    [LibraryImport("user32.dll")]
     public static partial nint GetClipboardOwner();
 
     [LibraryImport("user32.dll")]
@@ -67,21 +103,99 @@ internal static partial class NativeMethods
     [LibraryImport("user32.dll", SetLastError = true)]
     public static partial nint SetClipboardData(uint format, nint memory);
 
+    [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial uint RegisterWindowMessageW(string lpString);
+
+    [LibraryImport("user32.dll")]
+    public static partial int GetSystemMetrics(int nIndex);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    public static unsafe partial nint CreateIconFromResourceEx(
+        byte* presbits,
+        uint dwResSize,
+        [MarshalAs(UnmanagedType.Bool)] bool fIcon,
+        uint dwVer,
+        int cxDesired,
+        int cyDesired,
+        uint flags);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool DestroyIcon(nint hIcon);
+
+    [LibraryImport("shell32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool Shell_NotifyIconW(uint dwMessage, ref NOTIFYICONDATAW lpData);
+
     [LibraryImport("kernel32.dll", SetLastError = true)]
     public static partial nint GlobalAlloc(uint flags, nuint bytes);
 
-    [LibraryImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     public static partial nint GlobalFree(nint memory);
 
-    [LibraryImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     public static partial nint GlobalLock(nint memory);
 
-    [LibraryImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GlobalUnlock(nint memory);
 
-    [LibraryImport("kernel32.dll")]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     public static partial nuint GlobalSize(nint memory);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    public static partial nint OpenProcess(uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwProcessId);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool CloseHandle(nint hObject);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static unsafe partial bool QueryFullProcessImageNameW(nint hProcess, uint dwFlags, char* lpExeName, ref uint lpdwSize);
+
+    [LibraryImport("kernel32.dll")]
+    public static partial nint GetCurrentProcess();
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool SetProcessWorkingSetSizeEx(nint hProcess, nint dwMinimumWorkingSetSize, nint dwMaximumWorkingSetSize, uint flags);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool SetProcessInformation(
+        nint hProcess,
+        int processInformationClass,
+        ref PROCESS_POWER_THROTTLING_STATE processInformation,
+        int processInformationSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PROCESS_POWER_THROTTLING_STATE
+    {
+        public uint Version;
+        public uint ControlMask;
+        public uint StateMask;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public unsafe struct NOTIFYICONDATAW
+    {
+        public uint cbSize;
+        public nint hWnd;
+        public uint uID;
+        public uint uFlags;
+        public uint uCallbackMessage;
+        public nint hIcon;
+        public fixed char szTip[128];
+        public uint dwState;
+        public uint dwStateMask;
+        public fixed char szInfo[256];
+        public uint uTimeoutOrVersion;
+        public fixed char szInfoTitle[64];
+        public uint dwInfoFlags;
+        public Guid guidItem;
+        public nint hBalloonIcon;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct INPUT

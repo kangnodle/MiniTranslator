@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using MiniTranslator.Application.Abstractions;
 
@@ -24,7 +25,7 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
         }
 
         var sequenceBefore = NativeMethods.GetClipboardSequenceNumber();
-        var backup = clipboard.CaptureBackup();
+        var backup = await clipboard.CaptureBackupAsync(cancellationToken);
 
         if (NativeMethods.GetForegroundWindow() != sourceWindow
             || NativeMethods.GetClipboardSequenceNumber() != sequenceBefore
@@ -39,28 +40,55 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
             var sequence = NativeMethods.GetClipboardSequenceNumber();
             if (sequence != sequenceBefore)
             {
-                await Task.Delay(PollInterval, cancellationToken);
-                return clipboard.TryReadSelection(sourceWindow, sourceProcessId, sequence, backup);
+                return await clipboard.TryReadSelectionAsync(sourceWindow, sourceProcessId, sequence, backup, cancellationToken);
             }
         }
 
         return null;
     }
 
-    private static bool IsTerminalForegroundProcess(uint processId)
+    internal static unsafe bool IsTerminalForegroundProcess(uint processId)
     {
-        try
-        {
-            using var process = System.Diagnostics.Process.GetProcessById((int)processId);
-            return TerminalProcesses.IsTerminalProcess(process.ProcessName);
-        }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        var handle = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, bInheritHandle: false, processId);
+        if (handle == 0)
         {
             return false;
         }
+
+        try
+        {
+            Span<char> buffer = stackalloc char[260];
+            var length = (uint)buffer.Length;
+            fixed (char* pointer = buffer)
+            {
+                if (!NativeMethods.QueryFullProcessImageNameW(handle, 0, pointer, ref length) || length == 0)
+                {
+                    return false;
+                }
+            }
+
+            var name = Path.GetFileNameWithoutExtension(buffer[..(int)length]);
+            return TerminalProcesses.IsTerminalProcess(name);
+        }
+        finally
+        {
+            _ = NativeMethods.CloseHandle(handle);
+        }
     }
 
-    private static bool AnyConflictingModifierDown() => CopyShortcut.ConflictingModifierKeys.Any(IsKeyDown);
+    private static bool AnyConflictingModifierDown()
+    {
+        var keys = CopyShortcut.ConflictingModifierKeys;
+        for (var i = 0; i < keys.Count; i++)
+        {
+            if (IsKeyDown(keys[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static bool IsKeyDown(int vk) => (NativeMethods.GetAsyncKeyState(vk) & 0x8000) != 0;
 
@@ -75,7 +103,12 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
             return false;
         }
 
-        var inputs = strokes.Select(NativeMethods.KeyInput).ToArray();
+        var inputs = new NativeMethods.INPUT[strokes.Count];
+        for (var i = 0; i < strokes.Count; i++)
+        {
+            inputs[i] = NativeMethods.KeyInput(strokes[i]);
+        }
+
         var sent = NativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeMethods.INPUT>());
         return sent == inputs.Length;
     }

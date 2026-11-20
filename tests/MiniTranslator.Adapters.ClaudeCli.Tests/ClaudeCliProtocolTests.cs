@@ -119,6 +119,26 @@ public class ClaudeCliProtocolTests
         Assert.NotNull(result);
         Assert.Equal(TranslationErrors.EmptyResponse, result.Error);
     }
+
+    [Fact]
+    public void Partial_text_delta_is_extracted_from_stream_events()
+    {
+        var delta = ClaudeCliProtocol.TryParseDelta(
+            """{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"안녕"}}}""");
+
+        Assert.Equal("안녕", delta);
+    }
+
+    [Theory]
+    [InlineData("""{"type":"system","subtype":"init"}""")]
+    [InlineData("""{"type":"result","subtype":"success","is_error":false,"result":"안녕하세요"}""")]
+    [InlineData("""{"type":"stream_event","event":{"type":"message_start"}}""")]
+    [InlineData("not json")]
+    [InlineData("")]
+    public void Non_delta_lines_produce_no_partial_text(string line)
+    {
+        Assert.Null(ClaudeCliProtocol.TryParseDelta(line));
+    }
 }
 
 file static class ListExtensions

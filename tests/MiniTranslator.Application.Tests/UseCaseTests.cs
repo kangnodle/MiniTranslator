@@ -121,6 +121,41 @@ public class SelectedEngineTranslatorTests
 
         Assert.Equal([TranslationEngine.Claude], resolved);
     }
+
+    [Fact]
+    public async Task Releases_previous_engine_session_when_engine_switches()
+    {
+        var store = new SettingsStore(new InMemorySettingsRepository());
+        var claude = new SessionTrackingTranslator();
+        var codex = new SessionTrackingTranslator();
+        using var translator = new SelectedEngineTranslator(store, engine => engine == TranslationEngine.Codex ? codex : claude);
+
+        await translator.TranslateAsync(Request);
+        await store.UpdateAsync(s => s with { Engine = TranslationEngine.Codex });
+
+        await claude.Released.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(1, claude.ReleaseCount);
+        Assert.Equal(0, codex.ReleaseCount);
+    }
+
+    private sealed class SessionTrackingTranslator : MiniTranslator.Application.Abstractions.ITranslator, MiniTranslator.Application.Abstractions.ITranslatorSession
+    {
+        private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int ReleaseCount { get; private set; }
+
+        public Task Released => _released.Task;
+
+        public Task<Result<TranslationResult>> TranslateAsync(TranslationRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Result.Success(new TranslationResult(request.Text, $"[{request.Text}]", request.Languages)));
+
+        public Task ReleaseSessionAsync(CancellationToken cancellationToken = default)
+        {
+            ReleaseCount++;
+            _released.TrySetResult();
+            return Task.CompletedTask;
+        }
+    }
 }
 
 public class ChangeLanguagesUseCaseTests

@@ -136,9 +136,17 @@ public sealed partial class TranslatorViewModel : ObservableObject
         SetError(null);
         SetInfo(null);
 
+        var progress = new Progress<string>(partial =>
+        {
+            if (ReferenceEquals(_pendingTranslation, current) && !current.IsCancellationRequested)
+            {
+                TranslatedText = partial;
+            }
+        });
+
         try
         {
-            var result = await _translate.ExecuteAsync(SourceText, _languages, current.Token);
+            var result = await _translate.ExecuteAsync(SourceText, _languages, progress, current.Token);
             if (!current.IsCancellationRequested)
             {
                 ShowResult(result);

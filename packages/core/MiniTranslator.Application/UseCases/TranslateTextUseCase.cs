@@ -7,9 +7,16 @@ namespace MiniTranslator.Application.UseCases;
 
 public sealed class TranslateTextUseCase(ITranslator translator)
 {
+    public Task<Result<TranslationResult>> ExecuteAsync(
+        string? text,
+        LanguagePair languages,
+        CancellationToken cancellationToken = default) =>
+        ExecuteAsync(text, languages, onPartialText: null, cancellationToken);
+
     public async Task<Result<TranslationResult>> ExecuteAsync(
         string? text,
         LanguagePair languages,
+        IProgress<string>? onPartialText,
         CancellationToken cancellationToken = default)
     {
         var request = TranslationRequest.Create(text, languages);
@@ -18,6 +25,6 @@ public sealed class TranslateTextUseCase(ITranslator translator)
             return request.Error;
         }
 
-        return await translator.TranslateAsync(request.Value, cancellationToken);
+        return await translator.TranslateAsync(request.Value, onPartialText, cancellationToken);
     }
 }

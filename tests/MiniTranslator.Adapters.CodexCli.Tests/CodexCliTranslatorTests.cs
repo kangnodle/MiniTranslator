@@ -314,4 +314,44 @@ public class CodexCliTranslatorTests
 
         Assert.True(sessions.Started[0].Disposed);
     }
+
+    [Fact]
+    public async Task Disposes_idle_session_after_idle_timeout()
+    {
+        var sessions = new Sessions();
+        using var translator = new CodexCliTranslator(sessions.Start, Generous, idleTimeout: TimeSpan.FromMilliseconds(40));
+
+        await translator.TranslateAsync(Request("one"));
+        Assert.False(sessions.Started[0].Disposed);
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!sessions.Started[0].Disposed && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(15);
+        }
+
+        Assert.True(sessions.Started[0].Disposed);
+    }
+
+    [Fact]
+    public async Task Streams_deltas_through_progress_before_completion()
+    {
+        var sessions = new Sessions
+        {
+            Turn = turn => [turn.Reply, turn.Delta("안"), turn.Delta("녕"), turn.Completed],
+        };
+        using var translator = Translator(sessions);
+        var updates = new List<string>();
+        var progress = new SyncProgress(updates.Add);
+
+        var result = await translator.TranslateAsync(Request("Hello"), progress);
+
+        Assert.Equal("안녕", result.Value.TranslatedText);
+        Assert.Equal(["안", "안녕"], updates);
+    }
+
+    private sealed class SyncProgress(Action<string> report) : IProgress<string>
+    {
+        public void Report(string value) => report(value);
+    }
 }

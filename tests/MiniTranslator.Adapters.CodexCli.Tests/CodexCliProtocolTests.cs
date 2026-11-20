@@ -118,6 +118,7 @@ public class CodexCliProtocolTests
         var parameters = Parameters(CodexCliProtocol.ReadAccount(2), 2, "account/read");
 
         Assert.True(parameters.GetProperty("refreshToken").GetBoolean());
+        Assert.False(Parameters(CodexCliProtocol.ReadAccount(2, refreshToken: false), 2, "account/read").GetProperty("refreshToken").GetBoolean());
     }
 
     [Fact]

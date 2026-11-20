@@ -10,6 +10,7 @@ namespace MiniTranslator.Wpf.Views;
 public partial class SettingsView : UserControl
 {
     private readonly SettingsViewModel _viewModel;
+    private bool? _isNarrowToolbar;
 
     public SettingsView(SettingsViewModel viewModel)
     {
@@ -36,6 +37,12 @@ public partial class SettingsView : UserControl
     private void OnEngineToolbarSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var narrow = e.NewSize.Width < 440;
+        if (_isNarrowToolbar == narrow)
+        {
+            return;
+        }
+
+        _isNarrowToolbar = narrow;
         EngineColumn.Width = new GridLength(narrow ? 1 : 0.85, GridUnitType.Star);
         ModelColumn.Width = narrow ? new GridLength(0) : new GridLength(1.2, GridUnitType.Star);
         EffortColumn.Width = narrow ? new GridLength(0) : new GridLength(1, GridUnitType.Star);

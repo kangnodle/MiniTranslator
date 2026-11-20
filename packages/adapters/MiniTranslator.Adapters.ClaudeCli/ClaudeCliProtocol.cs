@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.Text;
 using System.Text.Json;
 using MiniTranslator.Domain.Common;
 using MiniTranslator.Domain.Settings;
@@ -31,6 +33,7 @@ internal static class ClaudeCliProtocol
         "--no-session-persistence",
         "--input-format", "stream-json",
         "--output-format", "stream-json",
+        "--include-partial-messages",
         "--verbose",
     ];
 
@@ -42,11 +45,56 @@ internal static class ClaudeCliProtocol
             : $"from {languages.Source.EnglishName} into {languages.Target.EnglishName}";
         var content = $"Translate the text inside <source_text> {direction}.\n<source_text>\n{request.Text}\n</source_text>";
 
-        return JsonSerializer.Serialize(new
+        var buffer = new ArrayBufferWriter<byte>(256 + content.Length);
+        using (var writer = new Utf8JsonWriter(buffer))
         {
-            type = "user",
-            message = new { role = "user", content },
-        });
+            writer.WriteStartObject();
+            writer.WriteString("type", "user");
+            writer.WriteStartObject("message");
+            writer.WriteString("role", "user");
+            writer.WriteString("content", content);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    public static string? TryParseDelta(string line)
+    {
+        if (line.Length == 0 || line[0] != '{' || !line.Contains("text_delta", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(line);
+            var root = document.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Object || Text(root, "type") != "stream_event")
+            {
+                return null;
+            }
+
+            if (!root.TryGetProperty("event", out var evt) || evt.ValueKind != JsonValueKind.Object
+                || Text(evt, "type") != "content_block_delta")
+            {
+                return null;
+            }
+
+            if (!evt.TryGetProperty("delta", out var delta) || delta.ValueKind != JsonValueKind.Object
+                || Text(delta, "type") != "text_delta")
+            {
+                return null;
+            }
+
+            return Text(delta, "text");
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     public static Result<TranslationResult>? ParseLine(string line, TranslationRequest request)

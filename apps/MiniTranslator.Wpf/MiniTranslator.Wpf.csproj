@@ -9,7 +9,13 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <TieredPGO>true</TieredPGO>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Release' and '$(RuntimeIdentifier)' != ''">true</PublishReadyToRun>
   </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="9" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\packages\core\MiniTranslator.Domain\MiniTranslator.Domain.csproj" />
@@ -19,11 +25,6 @@
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.CodexCli\MiniTranslator.Adapters.CodexCli.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.JsonSettings\MiniTranslator.Adapters.JsonSettings.csproj" />
     <ProjectReference Include="..\..\packages\adapters\MiniTranslator.Adapters.Windows\MiniTranslator.Adapters.Windows.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="H.NotifyIcon.Wpf" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>

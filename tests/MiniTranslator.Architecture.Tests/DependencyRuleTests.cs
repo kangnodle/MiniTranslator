@@ -2,10 +2,10 @@ using System.Reflection;
 using MiniTranslator.Application.Settings;
 using MiniTranslator.Domain.Common;
 using MiniTranslator.Presentation.ViewModels;
-using ClaudeCli = MiniTranslator.Adapters.ClaudeCli.ServiceCollectionExtensions;
-using CodexCli = MiniTranslator.Adapters.CodexCli.ServiceCollectionExtensions;
-using JsonSettings = MiniTranslator.Adapters.JsonSettings.ServiceCollectionExtensions;
-using WindowsDesktop = MiniTranslator.Adapters.Windows.ServiceCollectionExtensions;
+using ClaudeCli = MiniTranslator.Adapters.ClaudeCli.ClaudeCliAdapter;
+using CodexCli = MiniTranslator.Adapters.CodexCli.CodexCliAdapter;
+using JsonSettings = MiniTranslator.Adapters.JsonSettings.JsonSettingsAdapter;
+using WindowsDesktop = MiniTranslator.Adapters.Windows.WindowsDesktopAdapter;
 
 namespace MiniTranslator.Architecture.Tests;
 

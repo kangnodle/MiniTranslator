@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using MiniTranslator.Adapters.ClaudeCli;
 using MiniTranslator.Adapters.CodexCli;
 using MiniTranslator.Adapters.JsonSettings;
@@ -14,50 +13,79 @@ using MiniTranslator.Wpf.Services;
 
 namespace MiniTranslator.Wpf;
 
-internal static class CompositionRoot
+internal sealed class AppContainer : IDisposable
 {
-    public static ServiceProvider Build() =>
-        new ServiceCollection()
-            .AddCore()
-            .AddClaudeCliTranslator()
-            .AddCodexCliTranslator(System.IO.Path.Combine(AppPaths.Default.Root, "codex"))
-            .AddJsonSettings()
-            .AddWindowsDesktop()
-            .AddPresentation()
-            .AddAppShell()
-            .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    private readonly WindowsDesktopServices _desktop;
+    private readonly HotkeyManager _hotkeys;
+    private readonly SelectedEngineTranslator _translator;
+    private readonly Lazy<ITranslator> _claudeTranslator;
+    private readonly Lazy<(ITranslator Translator, ICodexAccount Account)> _codex;
+    private readonly AppShell _shell;
 
-    private static IServiceCollection AddCore(this IServiceCollection services)
+    private AppContainer()
     {
-        services.AddSingleton<SettingsStore>();
-        services.AddSingleton<HotkeyManager>();
+        var repository = JsonSettingsAdapter.CreateRepository();
+        Settings = new SettingsStore(repository);
 
-        services.AddSingleton<ITranslator>(sp => new SelectedEngineTranslator(
-            sp.GetRequiredService<SettingsStore>(),
-            engine => sp.GetRequiredKeyedService<ITranslator>(engine)));
+        _desktop = WindowsDesktopAdapter.Create();
+        _hotkeys = new HotkeyManager(_desktop.Hotkey);
 
-        services.AddTransient<TranslateTextUseCase>();
-        services.AddTransient<ChangeLanguagesUseCase>();
-        services.AddTransient<ChangeEngineUseCase>();
-        services.AddTransient<SettingsEditor>();
-        services.AddTransient<CaptureSelectionUseCase>();
+        var codexHome = System.IO.Path.Combine(AppPaths.Default.Root, "codex");
+        _claudeTranslator = new Lazy<ITranslator>(() => ClaudeCliAdapter.CreateTranslator(Settings));
+        _codex = new Lazy<(ITranslator Translator, ICodexAccount Account)>(() => CodexCliAdapter.Create(Settings, codexHome));
 
-        return services;
+        _translator = new SelectedEngineTranslator(
+            Settings,
+            engine => engine switch
+            {
+                TranslationEngine.Codex => _codex.Value.Translator,
+                _ => _claudeTranslator.Value,
+            });
+
+        var translate = new TranslateTextUseCase(_translator);
+        var changeLanguages = new ChangeLanguagesUseCase(Settings);
+        var changeEngine = new ChangeEngineUseCase(Settings);
+        var captureSelection = new CaptureSelectionUseCase(_desktop.SelectionReader, Settings);
+
+        var translatorViewModel = new TranslatorViewModel(
+            translate,
+            changeLanguages,
+            Settings,
+            _desktop.Clipboard,
+            changeEngine);
+
+        _shell = new AppShell(
+            CreateSettingsViewModel,
+            Settings,
+            _hotkeys,
+            captureSelection,
+            translatorViewModel);
     }
 
-    private static IServiceCollection AddPresentation(this IServiceCollection services)
+    public SettingsStore Settings { get; }
+
+    public AppShell Shell => _shell;
+
+    public static AppContainer Build() => new();
+
+    public void Dispose()
     {
-        services.AddSingleton<TranslatorViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        _shell.Dispose();
+        _translator.Dispose();
+        if (_claudeTranslator.IsValueCreated && _claudeTranslator.Value is IDisposable claude)
+        {
+            claude.Dispose();
+        }
 
-        services.AddSingleton<Func<SettingsViewModel>>(sp => sp.GetRequiredService<SettingsViewModel>);
+        if (_codex.IsValueCreated && _codex.Value.Translator is IDisposable codex)
+        {
+            codex.Dispose();
+        }
 
-        return services;
+        _hotkeys.Dispose();
+        _desktop.Dispose();
     }
 
-    private static IServiceCollection AddAppShell(this IServiceCollection services)
-    {
-        services.AddSingleton<AppShell>();
-        return services;
-    }
+    private SettingsViewModel CreateSettingsViewModel() =>
+        new(new SettingsEditor(Settings, _hotkeys, _desktop.Startup, _codex.Value.Account));
 }

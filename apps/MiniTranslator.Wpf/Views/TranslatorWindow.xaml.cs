@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Threading;
 using MiniTranslator.Adapters.Windows;
 using MiniTranslator.Domain.Settings;
 using MiniTranslator.Presentation.ViewModels;
@@ -12,13 +11,13 @@ namespace MiniTranslator.Wpf.Views;
 
 public partial class TranslatorWindow : Window
 {
-    private const double OffScreen = -32000;
     private const double EnginePopupHorizontalMargin = 16;
 
-    private bool _prewarming;
     private IInputElement? _translationFocus;
     private Point _sourceScroll;
     private Point _resultScroll;
+    private bool? _isWideLayout;
+    private double _lastMaxLanguageWidth = 140;
 
     public TranslatorWindow(TranslatorViewModel viewModel)
     {
@@ -106,30 +105,6 @@ public partial class TranslatorWindow : Window
         return true;
     }
 
-    public void Prewarm()
-    {
-        if (IsVisible)
-        {
-            return;
-        }
-
-        Left = OffScreen;
-        Top = OffScreen;
-        ShowInTaskbar = false;
-        Show();
-        _prewarming = true;
-
-        Dispatcher.InvokeAsync(() =>
-        {
-            if (_prewarming)
-            {
-                _prewarming = false;
-                Hide();
-                ShowInTaskbar = true;
-            }
-        }, DispatcherPriority.ApplicationIdle);
-    }
-
     public void ShowCentered()
     {
         ShowInactive();
@@ -138,10 +113,8 @@ public partial class TranslatorWindow : Window
 
     public void ShowInactive()
     {
-        if (!IsVisible || _prewarming)
+        if (!IsVisible)
         {
-            _prewarming = false;
-
             var area = SystemParameters.WorkArea;
             Left = area.Left + (area.Width - Width) / 2;
             Top = area.Top + Math.Max(0, (area.Height - Height) / 3);
@@ -198,6 +171,13 @@ public partial class TranslatorWindow : Window
         var maxLanguageWidth = e.NewSize.Width < 500
             ? Math.Max(64, (e.NewSize.Width - 266) / 2)
             : 140;
+
+        if (Math.Abs(_lastMaxLanguageWidth - maxLanguageWidth) < 0.5)
+        {
+            return;
+        }
+
+        _lastMaxLanguageWidth = maxLanguageWidth;
         SourceLanguageBox.MaxWidth = maxLanguageWidth;
         TargetLanguageBox.MaxWidth = maxLanguageWidth;
     }
@@ -212,6 +192,12 @@ public partial class TranslatorWindow : Window
     private void OnTranslationPanelsSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var wide = e.NewSize.Width >= 720;
+        if (_isWideLayout == wide)
+        {
+            return;
+        }
+
+        _isWideLayout = wide;
         Grid.SetRow(PanelDivider, wide ? 0 : 1);
         Grid.SetColumn(PanelDivider, wide ? 1 : 0);
         Grid.SetRow(ResultPanel, wide ? 0 : 2);

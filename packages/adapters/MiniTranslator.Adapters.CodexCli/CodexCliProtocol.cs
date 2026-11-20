@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using MiniTranslator.Application.Abstractions;
@@ -54,42 +55,56 @@ internal static class CodexCliProtocol
 
     public const string SignInHost = "auth.openai.com";
 
-    public static string Initialized { get; } = JsonSerializer.Serialize(new { method = "initialized", @params = new { } });
+    public static string Initialized { get; } = WriteJson(static writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("method", "initialized");
+        writer.WriteStartObject("params");
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+    });
 
     public static string Initialize(long id, string version) =>
-        Request(id, "initialize", new { clientInfo = new { name = "minitranslator", title = "MiniTranslator", version } });
-
-    public static string ReadAccount(long id) => Request(id, "account/read", new { refreshToken = true });
-
-    public static string StartLogin(long id) => Request(id, "account/login/start", new { type = "chatgpt" });
-
-    public static string Logout(long id) => Request(id, "account/logout", new { });
-
-    public static string StartThread(long id, string workingDirectory, string model = "")
-    {
-        var config = new Dictionary<string, object>
+        WriteRequest(id, "initialize", writer =>
         {
-            ["project_doc_max_bytes"] = 0,
-            ["skills.include_instructions"] = false,
-            ["web_search"] = "disabled",
-        };
-
-        foreach (var feature in DisabledFeatures)
-        {
-            config[$"features.{feature}"] = false;
-        }
-
-        return Request(id, "thread/start", new
-        {
-            ephemeral = true,
-            cwd = workingDirectory,
-            sandbox = "read-only",
-            approvalPolicy = "never",
-            model = model.Length == 0 ? DefaultModel : model,
-            baseInstructions = SystemPrompt,
-            config,
+            writer.WriteStartObject("clientInfo");
+            writer.WriteString("name", "minitranslator");
+            writer.WriteString("title", "MiniTranslator");
+            writer.WriteString("version", version);
+            writer.WriteEndObject();
         });
-    }
+
+    public static string ReadAccount(long id) =>
+        ReadAccount(id, refreshToken: true);
+
+    public static string ReadAccount(long id, bool refreshToken) =>
+        WriteRequest(id, "account/read", writer => writer.WriteBoolean("refreshToken", refreshToken));
+
+    public static string StartLogin(long id) =>
+        WriteRequest(id, "account/login/start", static writer => writer.WriteString("type", "chatgpt"));
+
+    public static string Logout(long id) =>
+        WriteRequest(id, "account/logout", static _ => { });
+
+    public static string StartThread(long id, string workingDirectory, string model = "") =>
+        WriteRequest(id, "thread/start", writer =>
+        {
+            writer.WriteBoolean("ephemeral", true);
+            writer.WriteString("cwd", workingDirectory);
+            writer.WriteString("sandbox", "read-only");
+            writer.WriteString("approvalPolicy", "never");
+            writer.WriteString("model", model.Length == 0 ? DefaultModel : model);
+            writer.WriteString("baseInstructions", SystemPrompt);
+            writer.WriteStartObject("config");
+            writer.WriteNumber("project_doc_max_bytes", 0);
+            writer.WriteBoolean("skills.include_instructions", false);
+            writer.WriteString("web_search", "disabled");
+            for (var index = 0; index < DisabledFeatures.Count; index++)
+            {
+                writer.WriteBoolean($"features.{DisabledFeatures[index]}", false);
+            }
+            writer.WriteEndObject();
+        });
 
     public static string StartTurn(long id, string threadId, TranslationRequest request, string effort = "")
     {
@@ -99,18 +114,28 @@ internal static class CodexCliProtocol
             : $"from {languages.Source.EnglishName} into {languages.Target.EnglishName}";
         var text = $"Translate the text inside <source_text> {direction}.\n<source_text>\n{request.Text}\n</source_text>";
 
-        return Request(id, "turn/start", new
+        return WriteRequest(id, "turn/start", writer =>
         {
-            threadId,
-            input = new[] { new { type = "text", text } },
-            effort = effort.Length == 0 ? null : effort,
+            writer.WriteString("threadId", threadId);
+            writer.WriteStartArray("input");
+            writer.WriteStartObject();
+            writer.WriteString("type", "text");
+            writer.WriteString("text", text);
+            writer.WriteEndObject();
+            writer.WriteEndArray();
+            if (effort.Length == 0)
+            {
+                writer.WriteNull("effort");
+            }
+            else
+            {
+                writer.WriteString("effort", effort);
+            }
         });
     }
 
-    public static string Refuse(string requestId)
-    {
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer))
+    public static string Refuse(string requestId) =>
+        WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WritePropertyName("id");
@@ -120,10 +145,7 @@ internal static class CodexCliProtocol
             writer.WriteString("message", "MiniTranslator does not handle server requests.");
             writer.WriteEndObject();
             writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(buffer.ToArray());
-    }
+        });
 
     public static CodexMessage Parse(string line)
     {
@@ -223,8 +245,28 @@ internal static class CodexCliProtocol
         }
     }
 
-    private static string Request(long id, string method, object parameters) =>
-        JsonSerializer.Serialize(new { id, method, @params = parameters });
+    private static string WriteRequest(long id, string method, Action<Utf8JsonWriter> writeParams) =>
+        WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("id", id);
+            writer.WriteString("method", method);
+            writer.WriteStartObject("params");
+            writeParams(writer);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        });
+
+    private static string WriteJson(Action<Utf8JsonWriter> write)
+    {
+        var buffer = new ArrayBufferWriter<byte>(256);
+        using (var writer = new Utf8JsonWriter(buffer))
+        {
+            write(writer);
+        }
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
 
     private static JsonElement? Child(JsonElement element, string property) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Object

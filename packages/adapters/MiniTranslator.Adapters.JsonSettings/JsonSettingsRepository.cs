@@ -8,12 +8,12 @@ namespace MiniTranslator.Adapters.JsonSettings;
 
 public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly SettingsJsonContext JsonContext = new(new JsonSerializerOptions
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
+    });
 
     public async Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -25,7 +25,7 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
         try
         {
             await using var stream = File.OpenRead(paths.SettingsFile);
-            var document = await JsonSerializer.DeserializeAsync<SettingsDocument>(stream, JsonOptions, cancellationToken);
+            var document = await JsonSerializer.DeserializeAsync(stream, JsonContext.SettingsDocument, cancellationToken);
             return SettingsMapper.FromDocument(document);
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -45,7 +45,7 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 
             await using (var stream = File.Create(tempFile))
             {
-                await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken);
+                await JsonSerializer.SerializeAsync(stream, document, JsonContext.SettingsDocument, cancellationToken);
             }
 
             File.Move(tempFile, paths.SettingsFile, overwrite: true);

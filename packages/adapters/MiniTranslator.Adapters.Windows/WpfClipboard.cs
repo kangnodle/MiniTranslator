@@ -32,24 +32,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         }
     }
 
-    public string? TryGetText()
-    {
-        for (var attempt = 1; attempt <= Attempts; attempt++)
-        {
-            try
-            {
-                return System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : null;
-            }
-            catch (COMException)
-            {
-                Thread.Sleep(RetryDelay);
-            }
-        }
-
-        return null;
-    }
-
-    public ClipboardBackup CaptureBackup()
+    public async Task<ClipboardBackup> CaptureBackupAsync(CancellationToken cancellationToken = default)
     {
         for (var attempt = 1; attempt <= Attempts; attempt++)
         {
@@ -79,16 +62,25 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
 
                 return new ClipboardBackup(null, null, false);
             }
+            catch (COMException) when (attempt < Attempts)
+            {
+                await Task.Delay(RetryDelay, cancellationToken);
+            }
             catch (COMException)
             {
-                Thread.Sleep(RetryDelay);
+                return new ClipboardBackup(null, null, false);
             }
         }
 
         return new ClipboardBackup(null, null, false);
     }
 
-    public string? TryReadSelection(nint sourceWindow, uint sourceProcessId, uint sequence, ClipboardBackup backup)
+    public async Task<string?> TryReadSelectionAsync(
+        nint sourceWindow,
+        uint sourceProcessId,
+        uint sequence,
+        ClipboardBackup backup,
+        CancellationToken cancellationToken = default)
     {
         _window ??= new HwndSource(new HwndSourceParameters("MiniTranslator.Clipboard")
         {
@@ -103,7 +95,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
                 return null;
             }
 
-            Thread.Sleep(RetryDelay);
+            await Task.Delay(RetryDelay, cancellationToken);
         }
 
         string? selected = null;
@@ -139,12 +131,12 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
 
             if (selected is not null && backup.OtherData is not null)
             {
-                RestoreNonText(backup.OtherData);
+                await RestoreNonTextAsync(backup.OtherData, cancellationToken);
             }
         }
     }
 
-    private static void RestoreNonText(object otherData)
+    private static async Task RestoreNonTextAsync(object otherData, CancellationToken cancellationToken)
     {
         for (var attempt = 1; attempt <= Attempts; attempt++)
         {
@@ -163,7 +155,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
             }
             catch (COMException) when (attempt < Attempts)
             {
-                Thread.Sleep(RetryDelay);
+                await Task.Delay(RetryDelay, cancellationToken);
             }
             catch (COMException)
             {
@@ -209,10 +201,10 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         }
     }
 
-    internal static nint AllocateText(string text)
+    internal static unsafe nint AllocateText(string text)
     {
-        var characters = (text + '\0').ToCharArray();
-        var memory = NativeMethods.GlobalAlloc(0x0002, (nuint)characters.Length * sizeof(char));
+        var byteCount = (nuint)(text.Length + 1) * sizeof(char);
+        var memory = NativeMethods.GlobalAlloc(0x0002, byteCount);
         if (memory == 0)
         {
             return 0;
@@ -227,7 +219,16 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
 
         try
         {
-            Marshal.Copy(characters, 0, pointer, characters.Length);
+            var destination = (char*)pointer;
+            if (text.Length > 0)
+            {
+                fixed (char* source = text)
+                {
+                    Buffer.MemoryCopy(source, destination, byteCount, (nuint)text.Length * sizeof(char));
+                }
+            }
+
+            destination[text.Length] = '\0';
         }
         finally
         {
@@ -244,8 +245,7 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
         try
         {
             previousMemory = AllocateText(previousText);
-            selectedMemory = AllocateText(selected);
-            if (previousMemory == 0 || selectedMemory == 0 || !NativeMethods.EmptyClipboard())
+            if (previousMemory == 0 || !NativeMethods.EmptyClipboard())
             {
                 return;
             }
@@ -253,15 +253,17 @@ internal sealed class WpfClipboard : IClipboard, IDisposable
             if (NativeMethods.SetClipboardData(UnicodeText, previousMemory) != 0)
             {
                 previousMemory = 0;
+                return;
             }
-            else if (NativeMethods.SetClipboardData(UnicodeText, selectedMemory) != 0)
+
+            selectedMemory = AllocateText(selected);
+            if (selectedMemory != 0 && NativeMethods.SetClipboardData(UnicodeText, selectedMemory) != 0)
             {
                 selectedMemory = 0;
+                return;
             }
-            else
-            {
-                throw new COMException("클립보드 텍스트를 복원하지 못했습니다.", Marshal.GetHRForLastWin32Error());
-            }
+
+            throw new COMException("클립보드 텍스트를 복원하지 못했습니다.", Marshal.GetHRForLastWin32Error());
         }
         finally
         {
