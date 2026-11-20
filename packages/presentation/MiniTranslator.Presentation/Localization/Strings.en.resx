@@ -132,6 +132,9 @@ Look for its icon in the system tray.</value></data>
   <data name="CodexSignInCancel" xml:space="preserve"><value>Cancel sign-in</value></data>
   <data name="CodexExecutablePathHint" xml:space="preserve"><value>Leave empty to find codex on PATH. Enter the full path to codex.exe only when it is not on PATH.</value></data>
   <data name="Settings.InvalidEngine" xml:space="preserve"><value>Select a valid translation engine.</value></data>
+  <data name="Settings.InvalidCodexExecutablePath" xml:space="preserve"><value>Enter a full local drive path to an .exe file, or leave it empty.</value></data>
+  <data name="Settings.InvalidModel" xml:space="preserve"><value>The model name contains unsupported characters.</value></data>
+  <data name="Settings.InvalidEffort" xml:space="preserve"><value>The effort value contains unsupported characters.</value></data>
   <data name="Translation.ClaudeUnavailable" xml:space="preserve"><value>Could not run Claude Code. Install Claude Code and sign in with 'claude auth login' in a terminal, or switch the translation engine to Codex in Settings.</value></data>
   <data name="Translation.ClaudeFailed" xml:space="preserve"><value>Claude could not complete the translation. Check your sign-in with 'claude auth status' in a terminal, then try again.</value></data>
   <data name="Translation.ClaudeTimedOut" xml:space="preserve"><value>Claude did not respond in time. Try again.</value></data>

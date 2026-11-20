@@ -9,7 +9,9 @@ namespace MiniTranslator.Adapters.ClaudeCli;
 
 internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDisposable
 {
-    public const int MaxTurnsPerSession = 20;
+    public const int MaxTurnsPerSession = 1;
+
+    internal const int MaxOutputLength = 100_000;
 
     public static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromMinutes(3);
 
@@ -17,6 +19,7 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
     private readonly TimeSpan _timeout;
     private readonly Func<EngineOptions>? _currentOptions;
     private readonly TimeSpan? _idleTimeout;
+    private readonly int _maxTurnsPerSession;
     private readonly SemaphoreSlim _turn = new(1, 1);
     private readonly Timer? _idleTimer;
 
@@ -29,12 +32,14 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
         Func<EngineOptions, IClaudeProcess> startProcess,
         TimeSpan timeout,
         Func<EngineOptions>? currentOptions = null,
-        TimeSpan? idleTimeout = null)
+        TimeSpan? idleTimeout = null,
+        int maxTurnsPerSession = MaxTurnsPerSession)
     {
         _startProcess = startProcess;
         _timeout = timeout;
         _currentOptions = currentOptions;
         _idleTimeout = idleTimeout;
+        _maxTurnsPerSession = Math.Max(1, maxTurnsPerSession);
         if (idleTimeout is { } delay && delay > TimeSpan.Zero)
         {
             _idleTimer = new Timer(OnIdleTimeout, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -66,7 +71,7 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
                 _sessionOptions = options;
             }
 
-            var reusedSession = _session is not null && _turns < MaxTurnsPerSession;
+            var reusedSession = _session is not null && _turns < _maxTurnsPerSession;
             var result = await ExchangeAsync(request, onPartialText, deadline.Token);
 
             if (result is null && reusedSession)
@@ -132,7 +137,7 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
         IProgress<string>? onPartialText,
         CancellationToken cancellationToken)
     {
-        if (_turns >= MaxTurnsPerSession)
+        if (_turns >= _maxTurnsPerSession)
         {
             EndSession();
         }
@@ -148,6 +153,12 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
             {
                 if (partial is not null && ClaudeCliProtocol.TryParseDelta(line) is { Length: > 0 } delta)
                 {
+                    if (partial.Length + delta.Length > MaxOutputLength)
+                    {
+                        EndSession();
+                        return TranslationErrors.ClaudeFailed("Translation output exceeded the maximum allowed length.");
+                    }
+
                     partial.Append(delta);
                     onPartialText!.Report(partial.ToString());
                     continue;
@@ -158,8 +169,14 @@ internal sealed class ClaudeCliTranslator : ITranslator, ITranslatorSession, IDi
                     continue;
                 }
 
+                if (result.IsSuccess && result.Value.TranslatedText.Length > MaxOutputLength)
+                {
+                    EndSession();
+                    return TranslationErrors.ClaudeFailed("Translation output exceeded the maximum allowed length.");
+                }
+
                 _turns++;
-                if (result.IsFailure)
+                if (result.IsFailure || _turns >= _maxTurnsPerSession)
                 {
                     EndSession();
                 }

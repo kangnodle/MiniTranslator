@@ -41,4 +41,19 @@ public class SettingsEditorCodexAccountTests
         Assert.Equal(CodexAccountState.SignedOut, signedOut.Value);
         Assert.Equal(0, repository.SaveCount);
     }
+
+    [Fact]
+    public async Task Unsafe_codex_executable_paths_are_rejected_before_calling_the_adapter()
+    {
+        var (editor, account, _) = Create();
+
+        var read = await editor.ReadCodexAccountAsync(@"\\attacker\share\codex.exe");
+        var signIn = await editor.SignInToCodexAsync(@"C:\Tools\codex.cmd");
+        var signOut = await editor.SignOutOfCodexAsync(@"relative\codex.exe");
+
+        Assert.Equal(MiniTranslator.Domain.Settings.SettingsErrors.InvalidCodexExecutablePath, read.Error);
+        Assert.Equal(MiniTranslator.Domain.Settings.SettingsErrors.InvalidCodexExecutablePath, signIn.Error);
+        Assert.Equal(MiniTranslator.Domain.Settings.SettingsErrors.InvalidCodexExecutablePath, signOut.Error);
+        Assert.Empty(account.Calls);
+    }
 }

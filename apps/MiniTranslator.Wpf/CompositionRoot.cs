@@ -30,7 +30,7 @@ internal sealed class AppContainer : IDisposable
         _desktop = WindowsDesktopAdapter.Create();
         _hotkeys = new HotkeyManager(_desktop.Hotkey);
 
-        var codexHome = System.IO.Path.Combine(AppPaths.Default.Root, "codex");
+        var codexHome = ResolveCodexHome(AppPaths.Default);
         _claudeTranslator = new Lazy<ITranslator>(() => ClaudeCliAdapter.CreateTranslator(Settings));
         _codex = new Lazy<(ITranslator Translator, ICodexAccount Account)>(() => CodexCliAdapter.Create(Settings, codexHome));
 
@@ -88,4 +88,34 @@ internal sealed class AppContainer : IDisposable
 
     private SettingsViewModel CreateSettingsViewModel() =>
         new(new SettingsEditor(Settings, _hotkeys, _desktop.Startup, _codex.Value.Account));
+
+    private static string ResolveCodexHome(AppPaths paths)
+    {
+        var target = paths.CodexHome;
+        var legacy = paths.LegacyCodexHome;
+
+        if (!string.Equals(target, legacy, StringComparison.OrdinalIgnoreCase)
+            && !System.IO.Directory.Exists(target)
+            && System.IO.Directory.Exists(legacy))
+        {
+            try
+            {
+                if ((System.IO.File.GetAttributes(legacy) & System.IO.FileAttributes.ReparsePoint) == 0)
+                {
+                    var parent = System.IO.Path.GetDirectoryName(target);
+                    if (!string.IsNullOrEmpty(parent))
+                    {
+                        System.IO.Directory.CreateDirectory(parent);
+                    }
+
+                    System.IO.Directory.Move(legacy, target);
+                }
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return target;
+    }
 }

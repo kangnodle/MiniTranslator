@@ -11,6 +11,8 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
 {
     public const int MaxTurnsPerSession = 20;
 
+    internal const int MaxOutputLength = 100_000;
+
     public static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromMinutes(3);
 
     private readonly Func<ICodexProcess> _startProcess;
@@ -21,7 +23,6 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
     private readonly Timer? _idleTimer;
 
     private CodexConnection? _session;
-    private string? _threadId;
     private int _turns;
     private EngineOptions _sessionOptions = EngineOptions.Default;
     private bool _disposed;
@@ -170,7 +171,7 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
         if (_session is null)
         {
             _session = new CodexConnection(_startProcess());
-            if (await OpenThreadAsync(_session, _sessionOptions.Model, cancellationToken) is not { } opened)
+            if (await OpenSessionAsync(_session, cancellationToken) is not { } opened)
             {
                 return null;
             }
@@ -179,14 +180,22 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
             {
                 return opened.Error;
             }
-
-            _threadId = opened.Value;
         }
 
-        return await TurnAsync(_session, _threadId!, request, _sessionOptions.Effort, onPartialText, cancellationToken);
+        if (await StartThreadAsync(_session, _sessionOptions.Model, cancellationToken) is not { } thread)
+        {
+            return null;
+        }
+
+        if (thread.IsFailure)
+        {
+            return thread.Error;
+        }
+
+        return await TurnAsync(_session, thread.Value, request, _sessionOptions.Effort, onPartialText, cancellationToken);
     }
 
-    private static async Task<Result<string>?> OpenThreadAsync(CodexConnection session, string model, CancellationToken cancellationToken)
+    private static async Task<Result<Unit>?> OpenSessionAsync(CodexConnection session, CancellationToken cancellationToken)
     {
         if (await session.HandshakeAsync(TranslationErrors.CodexFailed, cancellationToken) is not { } handshake)
         {
@@ -208,12 +217,14 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
             return account.Error;
         }
 
-        if (!CodexCliProtocol.Account(account.Value).SignedIn)
-        {
-            return TranslationErrors.CodexSignedOut;
-        }
+        return CodexCliProtocol.Account(account.Value).SignedIn
+            ? Result.Success()
+            : TranslationErrors.CodexSignedOut;
+    }
 
-        var workingDirectory = Path.GetTempPath();
+    private static async Task<Result<string>?> StartThreadAsync(CodexConnection session, string model, CancellationToken cancellationToken)
+    {
+        var workingDirectory = CodexProcess.EnsureSandboxWorkingDirectory();
         if (await session.CallAsync(id => CodexCliProtocol.StartThread(id, workingDirectory, model), TranslationErrors.CodexFailed, cancellationToken)
             is not { } thread)
         {
@@ -254,6 +265,11 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
                     return TranslationErrors.CodexFailed(failure.Detail);
 
                 case CodexMessage.Delta delta when delta.ThreadId == threadId && (turnId is null || delta.TurnId == turnId):
+                    if (output.Length + delta.Text.Length > MaxOutputLength)
+                    {
+                        return TranslationErrors.CodexFailed("Translation output exceeded the maximum allowed length.");
+                    }
+
                     output.Append(delta.Text);
                     onPartialText?.Report(output.ToString());
                     break;
@@ -343,7 +359,6 @@ internal sealed class CodexCliTranslator : ITranslator, ITranslatorSession, IDis
         DisarmIdleTimer();
         _session?.Dispose();
         _session = null;
-        _threadId = null;
         _turns = 0;
     }
 }

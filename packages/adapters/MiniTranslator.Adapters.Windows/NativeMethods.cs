@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+
 namespace MiniTranslator.Adapters.Windows;
 
 internal static partial class NativeMethods
@@ -26,6 +28,7 @@ internal static partial class NativeMethods
     public const uint KEYEVENTF_KEYUP = 0x0002;
 
     public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+    public const int ERROR_INSUFFICIENT_BUFFER = 122;
 
     public const int ProcessPowerThrottling = 4;
     public const uint PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1;
@@ -105,6 +108,9 @@ internal static partial class NativeMethods
 
     [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
     public static partial uint RegisterWindowMessageW(string lpString);
+
+    [LibraryImport("user32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    public static partial uint RegisterClipboardFormatW(string lpszFormat);
 
     [LibraryImport("user32.dll")]
     public static partial int GetSystemMetrics(int nIndex);

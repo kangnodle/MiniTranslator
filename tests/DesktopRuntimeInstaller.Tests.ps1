@@ -19,11 +19,23 @@ function Get-ItemProperty {
 }
 
 function Invoke-WebRequest {
-    param($Uri, $OutFile, [switch]$UseBasicParsing, $TimeoutSec)
+    param($Uri, $OutFile, [switch]$UseBasicParsing, [switch]$PassThru, $TimeoutSec)
     $script:downloadUri = $Uri
     $script:downloadPath = $OutFile
     if ($script:scenario -eq 'download-failure') { throw 'Network unavailable.' }
     [IO.File]::WriteAllText($OutFile, 'runtime installer fixture')
+    $finalUri = switch ($script:scenario) {
+        'downgrade-redirect' { 'http://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-x64.exe' }
+        'untrusted-redirect' { 'https://example.org/windowsdesktop-runtime.exe' }
+        default { 'https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/11.0.1/windowsdesktop-runtime-win-x64.exe' }
+    }
+    if ($PassThru) {
+        [pscustomobject]@{
+            BaseResponse = [pscustomobject]@{
+                ResponseUri = [Uri]$finalUri
+            }
+        }
+    }
 }
 
 function Get-AuthenticodeSignature {
@@ -34,6 +46,24 @@ function Get-AuthenticodeSignature {
         SignerCertificate = [pscustomobject]@{
             Subject = $(if ($script:scenario -eq 'wrong-publisher') { 'CN=Other, O=Other' } else { 'CN=Microsoft Corporation, O=Microsoft Corporation, C=US' })
         }
+        TimeStamperCertificate = $(if ($script:scenario -eq 'missing-timestamp') { $null } else { [pscustomobject]@{ Subject = 'CN=Microsoft Time-Stamp Service' } })
+    }
+}
+
+function Get-RuntimeInstallerMetadata {
+    param($LiteralPath)
+    if ($LiteralPath -ne $script:downloadPath) { throw 'Metadata checked on the wrong file.' }
+    if ($script:scenario -eq 'wrong-product') {
+        return [pscustomobject]@{
+            CompanyName = 'Microsoft Corporation'
+            ProductName = 'Unrelated Microsoft Tool'
+            FileDescription = 'Unrelated Microsoft Tool'
+        }
+    }
+    [pscustomobject]@{
+        CompanyName = 'Microsoft Corporation'
+        ProductName = 'Microsoft Windows Desktop Runtime - 11.0.1'
+        FileDescription = 'Microsoft Windows Desktop Runtime - 11.0.1'
     }
 }
 
@@ -43,6 +73,17 @@ function Start-Process {
     if ($FilePath -ne $script:downloadPath -or ($ArgumentList -join ' ') -ne '/install /quiet /norestart' -or
         $Verb -ne 'RunAs' -or $WindowStyle -ne 'Hidden' -or -not $Wait -or -not $PassThru) {
         throw 'Incorrect runtime installation command.'
+    }
+    $lockedAgainstWrite = $false
+    try {
+        $probe = [IO.File]::Open($FilePath, [IO.FileMode]::Open, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $probe.Dispose()
+    }
+    catch [IO.IOException] {
+        $lockedAgainstWrite = $true
+    }
+    if (-not $lockedAgainstWrite) {
+        throw 'Runtime installer was not write-locked across verification and execution.'
     }
     if ($script:scenario -eq 'elevation-cancelled') { throw 'Elevation cancelled.' }
     if ($script:scenario -eq 'installer-failure') { return [pscustomobject]@{ ExitCode = 1603 } }
@@ -67,7 +108,7 @@ foreach ($script:architecture in @('x64', 'arm64')) {
     $script:installedVersions = @{ "$script:architecture/Microsoft.WindowsDesktop.App" = @('11.0.0') }
     if (Test-DesktopRuntimeInstalled $script:architecture) { throw 'Accepted a missing core runtime.' }
 
-    foreach ($script:scenario in @('already-installed', 'install', 'restart-required', 'download-failure', 'invalid-signature', 'wrong-publisher', 'elevation-cancelled', 'installer-failure', 'runtime-still-missing')) {
+    foreach ($script:scenario in @('already-installed', 'install', 'restart-required', 'download-failure', 'downgrade-redirect', 'untrusted-redirect', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product', 'elevation-cancelled', 'installer-failure', 'runtime-still-missing')) {
         $script:installedVersions = @{}
         $script:downloadPath = $null
         $script:downloadUri = $null
@@ -92,7 +133,7 @@ foreach ($script:architecture in @('x64', 'arm64')) {
             if ($script:downloadUri -ne "https://aka.ms/dotnet/11.0/windowsdesktop-runtime-win-$script:architecture.exe") { throw 'Incorrect runtime download URL.' }
             if (Test-Path -LiteralPath (Split-Path -Parent $script:downloadPath)) { throw 'Runtime download directory was not removed.' }
         }
-        if ($script:scenario -in @('download-failure', 'invalid-signature', 'wrong-publisher') -and $script:installationStarted) {
+        if ($script:scenario -in @('download-failure', 'downgrade-redirect', 'untrusted-redirect', 'invalid-signature', 'wrong-publisher', 'missing-timestamp', 'wrong-product') -and $script:installationStarted) {
             throw 'Executed an untrusted or incomplete download.'
         }
     }

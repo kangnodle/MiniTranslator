@@ -132,6 +132,9 @@
   <data name="CodexSignInCancel" xml:space="preserve"><value>로그인 취소</value></data>
   <data name="CodexExecutablePathHint" xml:space="preserve"><value>비워 두면 PATH에서 codex를 찾습니다. PATH에 없을 때만 codex.exe의 전체 경로를 입력하세요.</value></data>
   <data name="Settings.InvalidEngine" xml:space="preserve"><value>번역 엔진을 다시 선택하세요.</value></data>
+  <data name="Settings.InvalidCodexExecutablePath" xml:space="preserve"><value>로컬 드라이브의 .exe 파일 전체 경로를 입력하거나 비워 두세요.</value></data>
+  <data name="Settings.InvalidModel" xml:space="preserve"><value>모델 이름에 사용할 수 없는 문자가 포함되어 있습니다.</value></data>
+  <data name="Settings.InvalidEffort" xml:space="preserve"><value>추론 강도 값에 사용할 수 없는 문자가 포함되어 있습니다.</value></data>
   <data name="Translation.ClaudeUnavailable" xml:space="preserve"><value>Claude Code를 실행할 수 없습니다. Claude Code를 설치하고 터미널에서 'claude auth login'으로 로그인하거나, 설정에서 번역 엔진을 Codex로 바꾸세요.</value></data>
   <data name="Translation.ClaudeFailed" xml:space="preserve"><value>Claude가 번역을 완료하지 못했습니다. 터미널에서 'claude auth status'로 로그인 상태를 확인한 뒤 다시 시도하세요.</value></data>
   <data name="Translation.ClaudeTimedOut" xml:space="preserve"><value>Claude가 제한 시간 안에 응답하지 않았습니다. 다시 시도하세요.</value></data>

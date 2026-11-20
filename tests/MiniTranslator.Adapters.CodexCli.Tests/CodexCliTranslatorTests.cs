@@ -41,7 +41,7 @@ public class CodexCliTranslatorTests
     }
 
     [Fact]
-    public async Task Keeps_one_process_and_one_thread_across_translations()
+    public async Task Keeps_one_process_with_isolated_threads_across_translations()
     {
         var sessions = new Sessions();
         using var translator = Translator(sessions);
@@ -52,7 +52,7 @@ public class CodexCliTranslatorTests
         Assert.Equal("[two]", second.Value.TranslatedText);
         Assert.Single(sessions.Started);
         Assert.False(sessions.Started[0].Disposed);
-        Assert.Single(sessions.Started[0].Methods, method => method == "thread/start");
+        Assert.Equal(2, sessions.Started[0].Methods.Count(method => method == "thread/start"));
         Assert.Single(sessions.Started[0].Methods, method => method == "account/read");
         Assert.Equal(2, sessions.Started[0].Methods.Count(method => method == "turn/start"));
     }
@@ -348,6 +348,22 @@ public class CodexCliTranslatorTests
 
         Assert.Equal("안녕", result.Value.TranslatedText);
         Assert.Equal(["안", "안녕"], updates);
+    }
+
+    [Fact]
+    public async Task Rejects_oversized_streaming_output()
+    {
+        var oversized = new string('x', CodexCliTranslator.MaxOutputLength + 1);
+        var sessions = new Sessions
+        {
+            Turn = turn => [turn.Reply, turn.Delta(oversized), turn.Completed],
+        };
+        using var translator = Translator(sessions);
+
+        var result = await translator.TranslateAsync(Request("Hello"));
+
+        Assert.Equal("Translation.CodexFailed", result.Error.Code);
+        Assert.True(sessions.Started[0].Disposed);
     }
 
     private sealed class SyncProgress(Action<string> report) : IProgress<string>

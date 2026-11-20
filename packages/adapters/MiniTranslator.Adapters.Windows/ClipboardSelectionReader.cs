@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.IO;
 using System.Runtime.InteropServices;
 using MiniTranslator.Application.Abstractions;
@@ -57,18 +58,41 @@ internal sealed class ClipboardSelectionReader(WpfClipboard clipboard) : ITextSe
 
         try
         {
-            Span<char> buffer = stackalloc char[260];
-            var length = (uint)buffer.Length;
-            fixed (char* pointer = buffer)
+            var capacity = 1024;
+            while (capacity <= 32768)
             {
-                if (!NativeMethods.QueryFullProcessImageNameW(handle, 0, pointer, ref length) || length == 0)
+                var buffer = ArrayPool<char>.Shared.Rent(capacity);
+                try
                 {
-                    return false;
+                    var length = (uint)buffer.Length;
+                    fixed (char* pointer = buffer)
+                    {
+                        if (NativeMethods.QueryFullProcessImageNameW(handle, 0, pointer, ref length))
+                        {
+                            if (length == 0)
+                            {
+                                return false;
+                            }
+
+                            var name = Path.GetFileNameWithoutExtension(buffer.AsSpan(0, (int)length));
+                            return TerminalProcesses.IsTerminalProcess(name);
+                        }
+                    }
+
+                    if (Marshal.GetLastPInvokeError() != NativeMethods.ERROR_INSUFFICIENT_BUFFER)
+                    {
+                        return false;
+                    }
                 }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
+
+                capacity *= 2;
             }
 
-            var name = Path.GetFileNameWithoutExtension(buffer[..(int)length]);
-            return TerminalProcesses.IsTerminalProcess(name);
+            return false;
         }
         finally
         {

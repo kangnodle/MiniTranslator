@@ -26,10 +26,25 @@ public class ClaudeCliTranslatorTests
     }
 
     [Fact]
-    public async Task Keeps_one_session_across_translations()
+    public async Task Isolates_each_translation_in_its_own_session_by_default()
     {
         var sessions = new Sessions(FakeProcess.Echoing);
         using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+
+        await translator.TranslateAsync(Request("one"));
+        var second = await translator.TranslateAsync(Request("two"));
+
+        Assert.Equal("[two]", second.Value.TranslatedText);
+        Assert.Equal(2, sessions.Started.Count);
+        Assert.True(sessions.Started[0].Disposed);
+        Assert.True(sessions.Started[1].Disposed);
+    }
+
+    [Fact]
+    public async Task Keeps_one_session_across_translations_when_session_reuse_is_enabled()
+    {
+        var sessions = new Sessions(FakeProcess.Echoing);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, maxTurnsPerSession: 5);
 
         await translator.TranslateAsync(Request("one"));
         var second = await translator.TranslateAsync(Request("two"));
@@ -54,7 +69,7 @@ public class ClaudeCliTranslatorTests
     {
         var sessions = new Sessions(FakeProcess.Echoing);
         var options = new EngineOptions("opus", "low");
-        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, () => options);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, () => options, maxTurnsPerSession: 5);
 
         await translator.TranslateAsync(Request());
         await translator.TranslateAsync(Request());
@@ -69,28 +84,29 @@ public class ClaudeCliTranslatorTests
     public async Task Replaces_the_session_after_the_turn_limit()
     {
         var sessions = new Sessions(FakeProcess.Echoing);
-        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, maxTurnsPerSession: 3);
 
-        for (var turn = 0; turn < ClaudeCliTranslator.MaxTurnsPerSession; turn++)
+        for (var turn = 0; turn < 3; turn++)
         {
             await translator.TranslateAsync(Request());
         }
 
         Assert.Single(sessions.Started);
+        Assert.True(sessions.Started[0].Disposed);
 
         var next = await translator.TranslateAsync(Request("fresh"));
 
         Assert.Equal("[fresh]", next.Value.TranslatedText);
         Assert.Equal(2, sessions.Started.Count);
         Assert.True(sessions.Started[0].Disposed);
-        Assert.Equal(ClaudeCliTranslator.MaxTurnsPerSession, sessions.Started[0].Received.Count);
+        Assert.Equal(3, sessions.Started[0].Received.Count);
     }
 
     [Fact]
     public async Task Restarts_once_when_an_idle_session_has_died()
     {
         var sessions = new Sessions(FakeProcess.Echoing);
-        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, maxTurnsPerSession: 5);
         await translator.TranslateAsync(Request("one"));
         sessions.Started[0].Exit();
 
@@ -192,7 +208,7 @@ public class ClaudeCliTranslatorTests
     public async Task Disposes_idle_session_after_idle_timeout()
     {
         var sessions = new Sessions(FakeProcess.Echoing);
-        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, idleTimeout: TimeSpan.FromMilliseconds(40));
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, idleTimeout: TimeSpan.FromMilliseconds(40), maxTurnsPerSession: 5);
 
         await translator.TranslateAsync(Request("one"));
         Assert.False(sessions.Started[0].Disposed);
@@ -209,11 +225,27 @@ public class ClaudeCliTranslatorTests
     public async Task Releasing_session_immediately_disposes_the_active_process()
     {
         var sessions = new Sessions(FakeProcess.Echoing);
-        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous, maxTurnsPerSession: 5);
         await translator.TranslateAsync(Request("one"));
 
         await translator.ReleaseSessionAsync();
 
+        Assert.True(sessions.Started[0].Disposed);
+    }
+
+    [Fact]
+    public async Task Rejects_oversized_streaming_output()
+    {
+        var oversized = new string('x', ClaudeCliTranslator.MaxOutputLength + 1);
+        var sessions = new Sessions(_ =>
+        [
+            JsonSerializer.Serialize(new { type = "stream_event", @event = new { type = "content_block_delta", delta = new { type = "text_delta", text = oversized } } }),
+        ]);
+        using var translator = new ClaudeCliTranslator(sessions.Start, Generous);
+
+        var result = await translator.TranslateAsync(Request("Hello"), new SyncProgress(_ => { }));
+
+        Assert.Equal("Translation.ClaudeFailed", result.Error.Code);
         Assert.True(sessions.Started[0].Disposed);
     }
 
@@ -333,8 +365,11 @@ public class ClaudeCliTranslatorTests
         {
             using var document = JsonDocument.Parse(message);
             var content = document.RootElement.GetProperty("message").GetProperty("content").GetString()!;
-            var start = content.IndexOf("<source_text>\n", StringComparison.Ordinal) + "<source_text>\n".Length;
-            return content[start..content.LastIndexOf("\n</source_text>", StringComparison.Ordinal)];
+            var openStart = content.IndexOf("\n<source_text_", StringComparison.Ordinal) + 1;
+            var openEnd = content.IndexOf(">\n", openStart, StringComparison.Ordinal);
+            var tag = content[(openStart + 1)..openEnd];
+            var start = openEnd + 2;
+            return content[start..content.LastIndexOf($"\n</{tag}>", StringComparison.Ordinal)];
         }
     }
 }

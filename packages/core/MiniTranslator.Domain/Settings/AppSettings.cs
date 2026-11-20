@@ -48,6 +48,40 @@ public sealed record AppSettings(
             return SettingsErrors.InvalidEngine;
         }
 
+        var codexPath = CodexExecutablePath;
+        if (draft.CodexExecutablePath != original.CodexExecutablePath)
+        {
+            codexPath = NormalizePath(draft.CodexExecutablePath);
+            if (!IsValidExecutablePath(codexPath))
+            {
+                return SettingsErrors.InvalidCodexExecutablePath;
+            }
+        }
+
+        var claudeOptions = Claude;
+        if (draft.Claude != original.Claude)
+        {
+            var validated = EngineOptions.TryCreate(draft.Claude.Model, draft.Claude.Effort);
+            if (validated.IsFailure)
+            {
+                return validated.Error;
+            }
+
+            claudeOptions = validated.Value;
+        }
+
+        var codexOptions = Codex;
+        if (draft.Codex != original.Codex)
+        {
+            var validated = EngineOptions.TryCreate(draft.Codex.Model, draft.Codex.Effort);
+            if (validated.IsFailure)
+            {
+                return validated.Error;
+            }
+
+            codexOptions = validated.Value;
+        }
+
         return this with
         {
             Hotkey = draft.Hotkey == original.Hotkey ? Hotkey : draft.Hotkey,
@@ -55,10 +89,9 @@ public sealed record AppSettings(
             UiLanguage = draft.UiLanguage == original.UiLanguage ? UiLanguage : draft.UiLanguage,
             Font = draft.Font == original.Font ? Font : draft.Font,
             Engine = draft.Engine == original.Engine ? Engine : draft.Engine,
-            CodexExecutablePath = draft.CodexExecutablePath == original.CodexExecutablePath
-                ? CodexExecutablePath : NormalizePath(draft.CodexExecutablePath),
-            Claude = draft.Claude == original.Claude ? Claude : EngineOptions.Create(draft.Claude.Model, draft.Claude.Effort),
-            Codex = draft.Codex == original.Codex ? Codex : EngineOptions.Create(draft.Codex.Model, draft.Codex.Effort),
+            CodexExecutablePath = codexPath,
+            Claude = claudeOptions,
+            Codex = codexOptions,
             Behavior = new BehaviorSettings(
                 draft.Behavior.CaptureSelectionOnHotkey == original.Behavior.CaptureSelectionOnHotkey
                     ? Behavior.CaptureSelectionOnHotkey : draft.Behavior.CaptureSelectionOnHotkey,
@@ -69,7 +102,55 @@ public sealed record AppSettings(
         };
     }
 
+    public const int MaxExecutablePathLength = 260;
+
     public static string NormalizePath(string? path) => (path ?? string.Empty).Trim().Trim('"').Trim();
+
+    public static bool IsValidExecutablePath(string? path)
+    {
+        var normalized = NormalizePath(path);
+        if (normalized.Length == 0)
+        {
+            return true;
+        }
+
+        if (normalized.Length > MaxExecutablePathLength
+            || normalized.Length < 8
+            || !char.IsAsciiLetter(normalized[0])
+            || normalized[1] != ':'
+            || normalized[2] is not ('\\' or '/')
+            || !normalized.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        for (var i = 0; i < normalized.Length; i++)
+        {
+            var ch = normalized[i];
+            if (char.IsControl(ch) || ch is '"' or '<' or '>' or '|' or '*' or '?' or ';' or '&')
+            {
+                return false;
+            }
+        }
+
+        var segments = normalized[3..].Split(['\\', '/']);
+        if (segments.Length == 0)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < segments.Length; i++)
+        {
+            var segment = segments[i];
+            if (segment.Length == 0 || segment is "." or "..")
+            {
+                return false;
+            }
+        }
+
+        var fileName = segments[^1];
+        return fileName.Length > 4;
+    }
 
     public Result<AppSettings> WithTheme(AppTheme theme) =>
         Enum.IsDefined(theme) ? this with { Theme = theme } : SettingsErrors.InvalidTheme;
@@ -84,6 +165,11 @@ public sealed record AppSettings(
         if (model is null)
         {
             return this with { Engine = engine };
+        }
+
+        if (!EngineOptions.IsValidModel(model))
+        {
+            return SettingsErrors.InvalidModel;
         }
 
         return engine switch

@@ -110,6 +110,31 @@ public class SettingsMapperTests
         Assert.True(settings.Behavior.CaptureSelectionOnHotkey);
         Assert.False(settings.Behavior.HideOnDeactivate);
     }
+
+    [Fact]
+    public void Unsafe_paths_and_engine_options_in_settings_file_are_sanitized_to_defaults()
+    {
+        var document = new SettingsDocument
+        {
+            CodexExecutablePath = @"\\attacker\share\codex.exe",
+            Claude = new SettingsDocument.EngineDocument { Model = "--dangerously-skip-permissions", Effort = "--tools" },
+            Codex = new SettingsDocument.EngineDocument { Model = "gpt-6.1-terra", Effort = "high --bad" },
+        };
+
+        var settings = SettingsMapper.FromDocument(document);
+
+        Assert.Equal(string.Empty, settings.CodexExecutablePath);
+        Assert.Equal(EngineOptions.Default, settings.Claude);
+        Assert.Equal(new EngineOptions("gpt-6.1-terra", string.Empty), settings.Codex);
+    }
+
+    [Fact]
+    public void Default_codex_home_uses_local_appdata_rather_than_roaming_appdata()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        Assert.StartsWith(localAppData, AppPaths.Default.CodexHome, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(AppPaths.Default.LegacyCodexHome, AppPaths.Default.CodexHome);
+    }
 }
 
 public sealed class JsonSettingsRepositoryTests : IDisposable
@@ -155,6 +180,17 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
     {
         Directory.CreateDirectory(_paths.Root);
         await File.WriteAllTextAsync(_paths.SettingsFile, "{ not json");
+
+        var loaded = await new JsonSettingsRepository(_paths).LoadAsync();
+
+        Assert.Equal(AppSettings.Default, loaded);
+    }
+
+    [Fact]
+    public async Task Oversized_file_yields_defaults()
+    {
+        Directory.CreateDirectory(_paths.Root);
+        await File.WriteAllTextAsync(_paths.SettingsFile, new string(' ', (int)JsonSettingsRepository.MaxSettingsFileBytes + 1));
 
         var loaded = await new JsonSettingsRepository(_paths).LoadAsync();
 

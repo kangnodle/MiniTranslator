@@ -54,4 +54,59 @@ public class ClipboardTextTests
 
     [Fact]
     public void An_invalid_clipboard_handle_has_no_text() => Assert.Null(WpfClipboard.ReadUnicodeText(0));
+
+    [Fact]
+    public void Native_dword_buffer_round_trips()
+    {
+        var memory = WpfClipboard.AllocateDword(0);
+        try
+        {
+            Assert.NotEqual(nint.Zero, memory);
+            var pointer = NativeMethods.GlobalLock(memory);
+            Assert.NotEqual(nint.Zero, pointer);
+            try
+            {
+                Assert.Equal(0, Marshal.ReadInt32(pointer));
+            }
+            finally
+            {
+                NativeMethods.GlobalUnlock(memory);
+            }
+        }
+        finally
+        {
+            NativeMethods.GlobalFree(memory);
+        }
+    }
+
+    [Theory]
+    [InlineData(WpfClipboard.ExcludeFromMonitorFormat, true)]
+    [InlineData(WpfClipboard.ClipboardViewerIgnoreFormat, true)]
+    [InlineData("Text", false)]
+    public void Privacy_exclusion_formats_are_detected(string format, bool expected)
+    {
+        Assert.Equal(expected, WpfClipboard.HasPrivacyExclusionFormat([format]));
+    }
+
+    [Theory]
+    [InlineData(WpfClipboard.CanIncludeInHistoryFormat, 0, true)]
+    [InlineData(WpfClipboard.CanIncludeInHistoryFormat, 1, false)]
+    [InlineData(WpfClipboard.CanUploadToCloudFormat, 0, true)]
+    [InlineData(WpfClipboard.CanUploadToCloudFormat, 1, false)]
+    public void History_and_cloud_exclusion_flags_check_zero_value(string format, int flag, bool expected)
+    {
+        var bytes = BitConverter.GetBytes(flag);
+        Assert.Equal(expected, WpfClipboard.HasPrivacyExclusionFormat([format], _ => new MemoryStream(bytes)));
+    }
+
+    [Fact]
+    public void Windows_adapter_locks_native_dll_search_path_to_system32()
+    {
+        var attribute = typeof(NativeMethods).Assembly
+            .GetCustomAttributes(typeof(DefaultDllImportSearchPathsAttribute), inherit: false)
+            .OfType<DefaultDllImportSearchPathsAttribute>()
+            .Single();
+
+        Assert.Equal(DllImportSearchPath.System32, attribute.Paths);
+    }
 }

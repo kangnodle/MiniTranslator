@@ -35,13 +35,24 @@ public sealed class SettingsEditor
     public Result<Unit> EndHotkeyRecording() => _hotkeys.Resume();
 
     public Task<Result<CodexAccountState>> ReadCodexAccountAsync(string? executablePath, CancellationToken cancellationToken = default) =>
-        _codexAccount.ReadAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
+        ExecuteCodexAccountAsync(executablePath, _codexAccount.ReadAsync, cancellationToken);
 
     public Task<Result<CodexAccountState>> SignInToCodexAsync(string? executablePath, CancellationToken cancellationToken = default) =>
-        _codexAccount.SignInAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
+        ExecuteCodexAccountAsync(executablePath, _codexAccount.SignInAsync, cancellationToken);
 
     public Task<Result<CodexAccountState>> SignOutOfCodexAsync(string? executablePath, CancellationToken cancellationToken = default) =>
-        _codexAccount.SignOutAsync(AppSettings.NormalizePath(executablePath), cancellationToken);
+        ExecuteCodexAccountAsync(executablePath, _codexAccount.SignOutAsync, cancellationToken);
+
+    private static Task<Result<CodexAccountState>> ExecuteCodexAccountAsync(
+        string? executablePath,
+        Func<string, CancellationToken, Task<Result<CodexAccountState>>> action,
+        CancellationToken cancellationToken)
+    {
+        var normalized = AppSettings.NormalizePath(executablePath);
+        return AppSettings.IsValidExecutablePath(normalized)
+            ? action(normalized, cancellationToken)
+            : Task.FromResult(Result<CodexAccountState>.Failure(SettingsErrors.InvalidCodexExecutablePath));
+    }
 
     public Task<Result<AppSettings>> SetThemeAsync(AppTheme theme, CancellationToken cancellationToken = default)
     {

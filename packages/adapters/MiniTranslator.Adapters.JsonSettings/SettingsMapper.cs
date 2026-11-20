@@ -51,10 +51,16 @@ internal static class SettingsMapper
                 ? font : defaults.Font,
             Engine = Enum.TryParse<TranslationEngine>(document.Engine, ignoreCase: true, out var engine) && Enum.IsDefined(engine)
                 ? engine : defaults.Engine,
-            CodexExecutablePath = AppSettings.NormalizePath(document.CodexExecutablePath),
-            Claude = EngineOptions.Create(document.Claude?.Model, document.Claude?.Effort),
-            Codex = EngineOptions.Create(document.Codex?.Model, document.Codex?.Effort),
+            CodexExecutablePath = SanitizeExecutablePath(document.CodexExecutablePath),
+            Claude = EngineOptions.CreateSanitized(document.Claude?.Model, document.Claude?.Effort),
+            Codex = EngineOptions.CreateSanitized(document.Codex?.Model, document.Codex?.Effort),
         };
+    }
+
+    private static string SanitizeExecutablePath(string? path)
+    {
+        var normalized = AppSettings.NormalizePath(path);
+        return AppSettings.IsValidExecutablePath(normalized) ? normalized : string.Empty;
     }
 
     private static SettingsDocument.EngineDocument? ToDocument(EngineOptions options) =>

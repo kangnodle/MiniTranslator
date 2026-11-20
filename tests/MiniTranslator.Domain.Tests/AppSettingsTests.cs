@@ -173,4 +173,41 @@ public class AppSettingsTests
     {
         Assert.Equal(SettingsErrors.InvalidEngine, AppSettings.Default.WithEngineSelection((TranslationEngine)99).Error);
     }
+
+    [Theory]
+    [InlineData(@"\\attacker\share\codex.exe")]
+    [InlineData(@"\\?\C:\Tools\codex.exe")]
+    [InlineData(@"codex.exe")]
+    [InlineData(@"C:\Tools\..\Windows\cmd.exe")]
+    [InlineData(@"C:\Tools\codex.cmd")]
+    [InlineData(@"C:\.exe")]
+    public void Unsafe_codex_executable_paths_are_rejected_on_merge(string path)
+    {
+        var draft = AppSettings.Default with { CodexExecutablePath = path };
+
+        Assert.Equal(SettingsErrors.InvalidCodexExecutablePath, AppSettings.Default.MergeDraft(draft, AppSettings.Default).Error);
+    }
+
+    [Theory]
+    [InlineData("--dangerously-skip-permissions")]
+    [InlineData("sonnet --tools bash")]
+    [InlineData("sonnet\n--flag")]
+    public void Unsafe_model_values_are_rejected(string model)
+    {
+        var draft = AppSettings.Default with { Claude = EngineOptions.Create(model, "") };
+
+        Assert.Equal(SettingsErrors.InvalidModel, AppSettings.Default.MergeDraft(draft, AppSettings.Default).Error);
+        Assert.Equal(SettingsErrors.InvalidModel, AppSettings.Default.WithEngineSelection(TranslationEngine.Claude, model).Error);
+    }
+
+    [Theory]
+    [InlineData("--flag")]
+    [InlineData("high --extra")]
+    [InlineData("high\nlow")]
+    public void Unsafe_effort_values_are_rejected(string effort)
+    {
+        var draft = AppSettings.Default with { Codex = EngineOptions.Create("", effort) };
+
+        Assert.Equal(SettingsErrors.InvalidEffort, AppSettings.Default.MergeDraft(draft, AppSettings.Default).Error);
+    }
 }

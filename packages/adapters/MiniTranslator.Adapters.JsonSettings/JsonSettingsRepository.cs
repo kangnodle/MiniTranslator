@@ -8,6 +8,8 @@ namespace MiniTranslator.Adapters.JsonSettings;
 
 public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 {
+    internal const long MaxSettingsFileBytes = 64 * 1024;
+
     private static readonly SettingsJsonContext JsonContext = new(new JsonSerializerOptions
     {
         WriteIndented = true,
@@ -24,6 +26,12 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
 
         try
         {
+            var info = new FileInfo(paths.SettingsFile);
+            if ((info.Attributes & FileAttributes.ReparsePoint) != 0 || info.Length > MaxSettingsFileBytes)
+            {
+                return AppSettings.Default;
+            }
+
             await using var stream = File.OpenRead(paths.SettingsFile);
             var document = await JsonSerializer.DeserializeAsync(stream, JsonContext.SettingsDocument, cancellationToken);
             return SettingsMapper.FromDocument(document);
@@ -37,13 +45,19 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
     public async Task<Result<Unit>> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
     {
         var document = SettingsMapper.ToDocument(settings);
-        var tempFile = paths.SettingsFile + ".tmp";
+        var tempFile = $"{paths.SettingsFile}.{Guid.NewGuid():N}.tmp";
 
         try
         {
             Directory.CreateDirectory(paths.Root);
 
-            await using (var stream = File.Create(tempFile))
+            if ((File.GetAttributes(paths.Root) & FileAttributes.ReparsePoint) != 0
+                || (File.Exists(paths.SettingsFile) && (File.GetAttributes(paths.SettingsFile) & FileAttributes.ReparsePoint) != 0))
+            {
+                return SettingsErrors.SaveFailed("Settings path cannot be a reparse point.");
+            }
+
+            await using (var stream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 await JsonSerializer.SerializeAsync(stream, document, JsonContext.SettingsDocument, cancellationToken);
             }
@@ -53,7 +67,27 @@ public sealed class JsonSettingsRepository(AppPaths paths) : ISettingsRepository
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            TryDeleteTemp(tempFile);
             return SettingsErrors.SaveFailed(ex.Message);
+        }
+        catch
+        {
+            TryDeleteTemp(tempFile);
+            throw;
+        }
+    }
+
+    private static void TryDeleteTemp(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
         }
     }
 }

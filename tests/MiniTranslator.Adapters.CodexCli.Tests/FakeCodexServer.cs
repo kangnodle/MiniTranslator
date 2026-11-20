@@ -67,6 +67,7 @@ internal sealed class FakeServer(Sessions sessions) : ICodexProcess
     private readonly Queue<string> _output = new();
     private readonly TaskCompletionSource _waiting = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool _exited;
+    private int _threads;
     private int _turns;
 
     public static Func<Turn, string[]?> Echoing { get; } = turn =>
@@ -164,7 +165,7 @@ internal sealed class FakeServer(Sessions sessions) : ICodexProcess
                 return [Result(request, new { })];
 
             case "thread/start":
-                return [Result(request, new { thread = new { id = "thread-1" }, model = "gpt-6.1-terra" })];
+                return [Result(request, new { thread = new { id = $"thread-{++_threads}" }, model = "gpt-6.1-terra" })];
 
             case "turn/start":
                 var parameters = request.GetProperty("params");
@@ -212,7 +213,10 @@ internal sealed class FakeServer(Sessions sessions) : ICodexProcess
 
     private static string SourceText(string content)
     {
-        var start = content.IndexOf("<source_text>\n", StringComparison.Ordinal) + "<source_text>\n".Length;
-        return content[start..content.LastIndexOf("\n</source_text>", StringComparison.Ordinal)];
+        var openStart = content.IndexOf("\n<source_text_", StringComparison.Ordinal) + 1;
+        var openEnd = content.IndexOf(">\n", openStart, StringComparison.Ordinal);
+        var tag = content[(openStart + 1)..openEnd];
+        var start = openEnd + 2;
+        return content[start..content.LastIndexOf($"\n</{tag}>", StringComparison.Ordinal)];
     }
 }
